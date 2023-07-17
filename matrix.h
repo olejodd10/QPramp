@@ -10,8 +10,8 @@ void outer_product(uint16_t m, uint16_t n, double v1[m], double v2[n], double re
 
 void matrix_vector_product(uint16_t m, uint16_t n, double mat[m][n], double vec[n], double res[m]);
 
-// Merk dimensjonene til m2!! Column major
-void matrix_product(uint16_t m, uint16_t n, uint16_t p, double m1[m][n], double m2[p][n], double res[m][p]);
+// Merk dimensjonene til m2!! Column major/transponerte av m2 
+void matrix_product(uint16_t m, uint16_t n, uint16_t p, double m1[m][n], double m2t[p][n], double res[m][p]);
 
 // vec == res er lov
 void negate_matrix(uint16_t m, uint16_t n, double mat[m][n], double res[m][n]);

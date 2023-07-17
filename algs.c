@@ -79,7 +79,7 @@ static void algorithm1(uint16_t c, double invq[c][c], uint8_t a_set[c], double n
         vector_sum(c, y, v, y);
     }
 }
-//
+
 // Changes y
 static void ramp(uint16_t c, double y[c]) {
     for (int i = 0; i < c; ++i) {

@@ -19,13 +19,13 @@ static double f[P][N] = {{0.5, 0.4, 0.6}, {0.1, 0.7, 0.5}};
 
 // Everything below is set during setup
 static double ft[N][P];
-static double gt[P][C];
 static double neg_w[C];
 static double neg_s[C][N];
 static double neg_invh[P][P]; // Only used once for initial setup
-static double neg_g_invh_gt[C][C];
 static double neg_invh_f[P][N];
 static double neg_invh_gt[P][C];
+static double neg_g_invh[C][P];
+static double neg_g_invh_gt[C][C];
 
 static double y[C];
 static double v[C];
@@ -41,11 +41,11 @@ int main() {
     negate_vector(C, w, neg_w);
     negate_matrix(C, N, s, neg_s);
     transpose(P, N, f, ft);
-    transpose(C, P, g, gt);
     negate_matrix(P, P, invh, neg_invh);
-    matrix_product(P, P, N, neg_invh, f, neg_invh_f);
-    matrix_product(P, P, C, neg_invh, gt, neg_invh_gt);
-    matrix_product(C, P, C, g, neg_invh_gt, neg_g_invh_gt);
+    matrix_product(P, P, N, neg_invh, ft, neg_invh_f);
+    matrix_product(P, P, C, neg_invh, g, neg_invh_gt);
+    matrix_product(C, P, P, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
+    matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
 
     // while (1) {
         algorithm2(C, N, P, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);

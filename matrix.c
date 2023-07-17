@@ -20,11 +20,11 @@ void matrix_vector_product(uint16_t m, uint16_t n, double mat[m][n], double vec[
     }
 }
 
-// Merk dimensjonene til m2!! Column major
-void matrix_product(uint16_t m, uint16_t n, uint16_t p, double m1[m][n], double m2[p][n], double res[m][p]) {
+// Merk dimensjonene til m2!! Column major/transponerte av m2 
+void matrix_product(uint16_t m, uint16_t n, uint16_t p, double m1[m][n], double m2t[p][n], double res[m][p]) {
     for (int i = 0; i < m; ++i) {
         for (int j = 0; j < p; ++j) {
-            res[i][j] = inner_product(n, m1[i], m2[j]);
+            res[i][j] = inner_product(n, m1[i], m2t[j]);
         }
     }
 }
