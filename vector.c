@@ -2,7 +2,7 @@
 
 void print_vector(size_t n, double vec[n]) {
     for (size_t i = 0; i < n; ++i) {
-        printf("%.2f ", vec[i]);
+        printf("%.4f ", vec[i]);
     }
     printf("\n");
 }
