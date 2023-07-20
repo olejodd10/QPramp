@@ -9,7 +9,29 @@
 
 #define SIMULATION_TIMESTEPS 10
 
-#define EXAMPLE_PATH "../examples/example1"
+#define EXAMPLE 3
+
+#if EXAMPLE == 1
+    #define N 2
+    #define M 1
+    #define HORIZON 10
+    #define C 66 
+#elif EXAMPLE == 2
+    #define N 4
+    #define M 2
+    #define HORIZON 30
+    #define C 316 
+#elif EXAMPLE == 3
+    #define N 25
+    #define M 4
+    #define HORIZON 30
+    #define C 1560 
+#endif
+#define P HORIZON*M
+
+#define STR(x) STR2(x)
+#define STR2(x) #x
+#define EXAMPLE_PATH "../examples/example" STR(EXAMPLE)
 
 #define A_PATH EXAMPLE_PATH "/a.csv"
 #define B_PATH EXAMPLE_PATH "/b.csv"
@@ -20,8 +42,39 @@
 #define S_PATH EXAMPLE_PATH "/s.csv"
 #define F_PATH EXAMPLE_PATH "/f.csv"
 
+static double x[N];
+static double a[N][N];
+static double b[N][M];
+
+static double invh[P][P];
+static double w[C];
+static double g[C][P];
+static double s[C][N];
+static double f[P][N];
+
+static double ft[N][P];
+static double neg_w[C];
+static double neg_s[C][N];
+static double neg_invh[P][P]; // Only used once for initial setup
+static double neg_invh_f[P][N];
+static double neg_invh_gt[P][C];
+static double neg_g_invh[C][P];
+static double neg_g_invh_gt[C][C];
+    
+static double y[C];
+static double v[C];
+static double invq[C][C];
+static uint8_t a_set[C]; // Lookup table to represent set for now
+static double temp1[C];
+static double temp2[C][C];
+static double temp3[P];
+static double temp4[N];
+    
+static double u[P];
+
 int main() {
     // Parsing input dimensions
+    // The buffers probably take a lot of memory
     FILE* f_a = fopen(A_PATH, "r");
     FILE* f_b = fopen(B_PATH, "r");
     FILE* f_x0 = fopen(X0_PATH, "r");
@@ -31,51 +84,16 @@ int main() {
     FILE* f_s = fopen(S_PATH, "r");
     FILE* f_f = fopen(F_PATH, "r");
 
-    size_t n = parse_matrix_csv_width(f_s);
-    size_t c = parse_matrix_csv_height(f_s);
-    size_t p = parse_matrix_csv_width(f_g);
-    size_t m = parse_matrix_csv_width(f_b);
-
-    // Allocation
-    double x[n];
-    double a[n][n];
-    double b[n][m];
-
-    double invh[p][p];
-    double w[c];
-    double g[c][p];
-    double s[c][n];
-    double f[p][n];
-    
-    double ft[n][p];
-    double neg_w[c];
-    double neg_s[c][n];
-    double neg_invh[p][p]; // Only used once for initial setup
-    double neg_invh_f[p][n];
-    double neg_invh_gt[p][c];
-    double neg_g_invh[c][p];
-    double neg_g_invh_gt[c][c];
-    
-    double y[c];
-    double v[c];
-    double invq[c][c];
-    uint8_t a_set[c]; // Lookup table to represent set for now
-    double temp1[c];
-    double temp2[c][c];
-    double temp3[p];
-    double temp4[n];
-    
-    double u[p];
-
     // Parsing input vectors and input matrices
-    parse_matrix_csv(f_a, n, n, a);
-    parse_matrix_csv(f_b, n, m, b);
-    parse_vector_csv(f_x0, n, x);
-    parse_matrix_csv(f_invh, p, p, invh);
-    parse_vector_csv(f_w, c, w);
-    parse_matrix_csv(f_g, c, p, g);
-    parse_matrix_csv(f_s, c, n, s);
-    parse_matrix_csv(f_f, p, n, f);
+    // TODO: Assert their width and height first
+    parse_matrix_csv(f_a, N, N, a);
+    parse_matrix_csv(f_b, N, M, b);
+    parse_vector_csv(f_x0, N, x);
+    parse_matrix_csv(f_invh, P, P, invh);
+    parse_vector_csv(f_w, C, w);
+    parse_matrix_csv(f_g, C, P, g);
+    parse_matrix_csv(f_s, C, N, s);
+    parse_matrix_csv(f_f, P, N, f);
     fclose(f_a);
     fclose(f_b);
     fclose(f_x0);
@@ -86,22 +104,22 @@ int main() {
     fclose(f_f);
 
     // Other initialization
-    negate_vector(c, w, neg_w);
-    negate_matrix(c, n, s, neg_s);
-    transpose(p, n, f, ft);
-    negate_matrix(p, p, invh, neg_invh);
-    matrix_product(p, p, n, neg_invh, ft, neg_invh_f);
-    matrix_product(p, p, c, neg_invh, g, neg_invh_gt);
-    matrix_product(c, p, p, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
-    matrix_product(c, p, c, g, neg_g_invh, neg_g_invh_gt);
+    negate_vector(C, w, neg_w);
+    negate_matrix(C, N, s, neg_s);
+    transpose(P, N, f, ft);
+    negate_matrix(P, P, invh, neg_invh);
+    matrix_product(P, P, N, neg_invh, ft, neg_invh_f);
+    matrix_product(P, P, C, neg_invh, g, neg_invh_gt);
+    matrix_product(C, P, P, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
+    matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
 
     // Simulation
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(c, n, p, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);
-        simulate(n, m, a, x, b, u, temp4, x); // Note that the second dimension of u is larger than m
+        algorithm2(C, N, P, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);
+        simulate(N, M, a, x, b, u, temp4, x); // Note that the second dimension of u is larger than M
     }
     printf("Simulation finished with the following state vector:\n");
-    print_vector(n, x);
+    print_vector(N, x);
 
     return 0;
 }
