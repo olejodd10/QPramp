@@ -56,7 +56,7 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg
         } else {
             index = most_positive_index(c, a_set, y);
             if (index < 0) {
-                printf("y and A are compatible\n");
+                // printf("y and A are compatible\n");
                 break;
             }
             compute_v(c, invq, 0, index, neg_g_invh_gt, temp1, v);

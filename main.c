@@ -6,8 +6,9 @@
 #include "matrix.h"
 #include "parse.h"
 #include "lti.h"
+#include "timing.h"
 
-#define SIMULATION_TIMESTEPS 10
+#define SIMULATION_TIMESTEPS 100
 
 #define EXAMPLE 3
 
@@ -74,6 +75,7 @@ static double u[P];
 
 int main() {
     // The buffers probably take a lot of memory
+    tick();
     FILE* f_a = fopen(A_PATH, "r");
     FILE* f_b = fopen(B_PATH, "r");
     FILE* f_x0 = fopen(X0_PATH, "r");
@@ -124,8 +126,10 @@ int main() {
     fclose(f_g);
     fclose(f_s);
     fclose(f_f);
+    printf("Input parsing time: %d ms\n", tock());
 
     // Other initialization
+    tick();
     negate_vector(C, w, neg_w);
     negate_matrix(C, N, s, neg_s);
     transpose(P, N, f, ft);
@@ -134,12 +138,15 @@ int main() {
     matrix_product(P, P, C, neg_invh, g, neg_invh_gt);
     matrix_product(C, P, P, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
+    printf("Initialization time: %d ms\n", tock());
 
     // Simulation
+    tick();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
         algorithm2(C, N, P, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);
         simulate(N, M, a, x, b, u, temp4, x); // Note that the second dimension of u is larger than M
     }
+    printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
     printf("Simulation finished with the following state vector:\n");
     print_vector(N, x);
 
