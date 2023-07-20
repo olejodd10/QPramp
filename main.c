@@ -57,7 +57,7 @@ static double ft[N][P];
 static double neg_w[C];
 static double neg_s[C][N];
 static double neg_invh[P][P]; // Only used once for initial setup
-static double neg_invh_f[P][N];
+static double neg_invh_f[M][N]; // Actually P x N, but we only need the M first rows
 static double neg_invh_gt[P][C];
 static double neg_g_invh[C][P];
 static double neg_g_invh_gt[C][C];
@@ -68,10 +68,10 @@ static double invq[C][C];
 static uint8_t a_set[C]; // Lookup table to represent set for now
 static double temp1[C];
 static double temp2[C][C];
-static double temp3[P];
+static double temp3[M];
 static double temp4[N];
     
-static double u[P];
+static double u[M];
 
 int main() {
     // The buffers probably take a lot of memory
@@ -134,7 +134,7 @@ int main() {
     negate_matrix(C, N, s, neg_s);
     transpose(P, N, f, ft);
     negate_matrix(P, P, invh, neg_invh);
-    matrix_product(P, P, N, neg_invh, ft, neg_invh_f);
+    matrix_product(M, P, N, neg_invh, ft, neg_invh_f);
     matrix_product(P, P, C, neg_invh, g, neg_invh_gt);
     matrix_product(C, P, P, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
@@ -143,8 +143,8 @@ int main() {
     // Simulation
     tick();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(C, N, P, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);
-        simulate(N, M, a, x, b, u, temp4, x); // Note that the second dimension of u is larger than M
+        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);
+        simulate(N, M, a, x, b, u, temp4, x); 
     }
     printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
     printf("Simulation finished with the following state vector:\n");
