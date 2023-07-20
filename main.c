@@ -73,7 +73,6 @@ static double temp4[N];
 static double u[P];
 
 int main() {
-    // Parsing input dimensions
     // The buffers probably take a lot of memory
     FILE* f_a = fopen(A_PATH, "r");
     FILE* f_b = fopen(B_PATH, "r");
@@ -84,16 +83,39 @@ int main() {
     FILE* f_s = fopen(S_PATH, "r");
     FILE* f_f = fopen(F_PATH, "r");
 
-    // Parsing input vectors and input matrices
-    // TODO: Assert their width and height first
-    parse_matrix_csv(f_a, N, N, a);
-    parse_matrix_csv(f_b, N, M, b);
-    parse_vector_csv(f_x0, N, x);
-    parse_matrix_csv(f_invh, P, P, invh);
-    parse_vector_csv(f_w, C, w);
-    parse_matrix_csv(f_g, C, P, g);
-    parse_matrix_csv(f_s, C, N, s);
-    parse_matrix_csv(f_f, P, N, f);
+    if (parse_matrix_csv(f_a, N, N, a)) { 
+        printf("Error while parsing input matrix f_a.\n"); 
+        return 1;
+    }
+    if (parse_matrix_csv(f_b, N, M, b)) { 
+        printf("Error while parsing input matrix f_b.\n"); 
+        return 1;
+    }
+    if (parse_vector_csv(f_x0, N, x)) { 
+        printf("Error while parsing input vector f_x0.\n"); 
+        return 1;
+    }
+    if (parse_matrix_csv(f_invh, P, P, invh)) { 
+        printf("Error while parsing input matrix f_invh.\n"); 
+        return 1; 
+    }
+    if (parse_vector_csv(f_w, C, w)) { 
+        printf("Error while parsing input vector f_w.\n"); 
+        return 1; 
+    }
+    if (parse_matrix_csv(f_g, C, P, g)) { 
+        printf("Error while parsing input matrix f_g.\n"); 
+        return 1; 
+    }
+    if (parse_matrix_csv(f_s, C, N, s)) { 
+        printf("Error while parsing input matrix f_s.\n"); 
+        return 1; 
+    }
+    if (parse_matrix_csv(f_f, P, N, f)) { 
+        printf("Error while parsing input matrix f_f.\n"); 
+        return 1; 
+    }
+
     fclose(f_a);
     fclose(f_b);
     fclose(f_x0);
