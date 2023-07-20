@@ -6,8 +6,8 @@ void print_matrix(size_t m, size_t n, double mat[m][n]) {
     }
 }
 
-void outer_product(size_t m, size_t n, double v1[m], double v2[n], double res[m][n]) {
-    for (size_t i = 0; i < m; ++i) {
+void outer_product(size_t n, double v1[n], double v2[n], double res[n][n]) {
+    for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             res[i][j] = v1[i]*v2[j];
         }
@@ -60,11 +60,7 @@ void matrix_copy(size_t m, size_t n, double mat[m][n], double res[m][n]) {
 void eye(size_t n, double res[n][n]) {
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
-            if (i == j) {
-                res[i][j] = 1.0;
-            } else {
-                res[i][j] = 0.0;
-            }
+            res[i][j] = i == j ? 1.0 : 0.0;
         }
     }
 }

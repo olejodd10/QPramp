@@ -4,9 +4,14 @@
 #include <stddef.h>
 #include "vector.h"
 
+// Do not use any of the functions to do operations on parts of a matrix, as the layout in memory may be unexpected and give errors.
+// It seems that the array double mat[m][n] is laid out as a one-dimensional array in memory. [i][j] expands to [m*i+n] it seems.
+// For example; If calling print_matrix(3,3,mat) for a matrix that is really 10x10, only values from the first row will be printed. 
+// A printing function that only prints a window of a larger matrix may be implemented.
+
 void print_matrix(size_t m, size_t n, double mat[m][n]);
 
-void outer_product(size_t m, size_t n, double v1[m], double v2[n], double res[m][n]);
+void outer_product(size_t n, double v1[n], double v2[n], double res[n][n]);
 
 void matrix_vector_product(size_t m, size_t n, double mat[m][n], double vec[n], double res[m]);
 

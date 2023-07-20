@@ -1,14 +1,5 @@
 #include "algs.h"
 
-static uint8_t compatible(size_t c, uint8_t a_set[c], double y[c]) {
-    for (size_t i = 0; i < c; ++i) {
-        if ((a_set[i] && y[i] < 0.0) || (!a_set[i] && y[i] >= 0.0)) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 static ssize_t most_negative_index(size_t c, uint8_t a_set[c], double y[c]) {
     double min = y[0];
     size_t index = 0;
@@ -40,40 +31,39 @@ static ssize_t most_positive_index(size_t c, uint8_t a_set[c], double y[c]) {
 }
 
 // ******** Remember that neg_g_invh_gt must be volumn major for this implementation to work! Or maybe it is symmetric?
-static void compute_v(size_t c, double invq[c][c], uint8_t a_contains_i, size_t i, double neg_g_invh_gt[c][c], double v[c]) {
-    vector_copy(c, neg_g_invh_gt[i], v); // Ensure column major!
+static void compute_v(size_t c, double invq[c][c], uint8_t a_contains_i, size_t i, double neg_g_invh_gt[c][c], double temp[c], double v[c]) {
+    vector_copy(c, neg_g_invh_gt[i], temp); // Ensure column major!
     if (!a_contains_i) {
-        v[i] += 1.0;
+        temp[i] += 1.0;
     }
-    matrix_vector_product(c, c, invq, v, v);
+    matrix_vector_product(c, c, invq, temp, v);
 }
 
 // Terminal results are written to and available from a_set, invq and y
-// v can be anything - call ite temp?
+// v can be anything - call it temp?
 static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg_g_invh_gt[c][c], double v[c], double temp1[c], double temp2[c][c], double y[c]) {
     ssize_t index;
     double q0;
-    while (!compatible(c, a_set, y)) {
+    while (1) {
         // Tror faktisk ikke rustfunksjonene jeg skrev gjør noe som er raskere?
         index = most_negative_index(c, a_set, y);
         if (index >= 0) {
-            q0 = 1.0;
-            compute_v(c, invq, 1, index, neg_g_invh_gt, v);
+            compute_v(c, invq, 1, index, neg_g_invh_gt, temp1, v);
             a_set[index] = 0;
+            q0 = 1.0;
         } else {
             index = most_positive_index(c, a_set, y);
             if (index < 0) {
-                printf("Don't think this should happen");
+                printf("y and A are compatible\n");
+                break;
             }
-            q0 = -1.0;
-            compute_v(c, invq, 0, index, neg_g_invh_gt, v);
+            compute_v(c, invq, 0, index, neg_g_invh_gt, temp1, v);
             a_set[index] = 1;
+            q0 = -1.0;
         }
         
-        // Now that we have q0 and v, compute invq and y
         scale_vector(c, v, -1.0/(q0+v[index]), v);
-        vector_copy(c, invq[index], temp1);
-        outer_product(c, c, v, temp1, temp2); // **Sparsity
+        outer_product(c, v, invq[index], temp2); // **Sparsity
         matrix_sum(c, c, invq, temp2, invq); // **Sparsity
         scale_vector(c, v, y[index], v);
         vector_sum(c, y, v, y);
