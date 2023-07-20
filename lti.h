@@ -6,8 +6,10 @@
 #include "matrix.h"
 #include "vector.h"
 
+// res == x er IKKE lov
 void simulate_affine(size_t n, double a[n][n], double x[n], double res[n]);
 
+// res == x er lov
 void simulate(size_t n, size_t p, double a[n][n], double x[n], double b[n][p], double u[p], double temp[n], double res[n]);
 
 void measure_affine(size_t q, size_t n, double c[q][n], double x[n], double res[q]);
