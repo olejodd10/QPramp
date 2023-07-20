@@ -1,5 +1,7 @@
 #include "algs.h"
 
+#define EPS 2.2204e-15
+
 static ssize_t most_negative_index(size_t c, uint8_t a_set[c], double y[c]) {
     double min = y[0];
     size_t index = 0;
@@ -9,7 +11,7 @@ static ssize_t most_negative_index(size_t c, uint8_t a_set[c], double y[c]) {
             index = i;
         }    
     }
-    if (!a_set[index] || y[index] > 0.0) {
+    if (!a_set[index] || y[index] > -EPS) {
         return -1;
     }
     return index;
@@ -24,7 +26,7 @@ static ssize_t most_positive_index(size_t c, uint8_t a_set[c], double y[c]) {
             index = i;
         }    
     }
-    if (a_set[index] || y[index] < 0.0) {
+    if (a_set[index] || y[index] < EPS) {
         return -1;
     }
     return index;
