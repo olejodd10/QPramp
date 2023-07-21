@@ -67,9 +67,8 @@ static double v[C];
 static double invq[C][C];
 static uint8_t a_set[C]; // Lookup table to represent set for now
 static double temp1[C];
-static double temp2[C][C];
-static double temp3[M];
-static double temp4[N];
+static double temp2[M];
+static double temp3[N];
     
 static double u[M];
 
@@ -143,8 +142,8 @@ int main() {
     // Simulation
     tick();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, temp3, u);
-        simulate(N, M, a, x, b, u, temp4, x); 
+        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, u);
+        simulate(N, M, a, x, b, u, temp3, x); 
     }
     printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
     printf("Simulation finished with the following state vector:\n");
