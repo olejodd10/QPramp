@@ -67,8 +67,7 @@ static double v[C];
 static double invq[C][C];
 static uint8_t a_set[C]; // Lookup table to represent set for now
 static double temp1[C];
-static double temp2[M];
-static double temp3[N];
+static double temp2[N];
     
 static double u[M];
 
@@ -137,13 +136,14 @@ int main() {
     matrix_product(P, P, C, neg_invh, g, neg_invh_gt);
     matrix_product(C, P, P, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
+    matrix_product(C, P, M, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
     printf("Initialization time: %d ms\n", tock());
 
     // Simulation
     tick();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_invh_gt, x, invq, a_set, y, v, temp1, temp2, u);
-        simulate(N, M, a, x, b, u, temp3, x); 
+        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x, invq, a_set, y, v, temp1, u);
+        simulate(N, M, a, x, b, u, temp2, x); 
     }
     printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
     printf("Simulation finished with the following state vector:\n");

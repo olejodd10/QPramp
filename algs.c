@@ -88,31 +88,24 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg
     }
 }
 
-// Changes y
-static void ramp(size_t c, double y[c]) {
-    for (size_t i = 0; i < c; ++i) {
-        if (y[i] < 0.0) { // EPS?
-            y[i] = 0.0;
+static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], double x[n], double neg_g_invh[c][m], double y[c], double u[m]) {
+    matrix_vector_product(m, n, neg_invh_f, x, u);
+    for (int i = 0; i < c; ++i) {
+        if (y[i] > 0.0) {
+            add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
         }
     }
-}
-
-static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], double x[n], double neg_invh_gt[m][c], double y[c], double temp[m], double u[m]) {
-    matrix_vector_product(m, n, neg_invh_f, x, u);
-    ramp(c, y);
-    matrix_vector_product(m, c, neg_invh_gt, y, temp); // **Sparsity
-    vector_sum(m, u, temp, u);
 }
 
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-void algorithm2(size_t c, size_t n, size_t m, double neg_g_invh_gt[c][c], double neg_s[c][n], double neg_w[c], double neg_invh_f[m][n], double neg_invh_gt[m][c], double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double temp1[c], double temp2[m], double u[m]) {
+void algorithm2(size_t c, size_t n, size_t m, double neg_g_invh_gt[c][c], double neg_s[c][n], double neg_w[c], double neg_invh_f[m][n], double neg_g_invh[c][m], double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double temp1[c], double u[m]) {
     for (size_t i = 0; i < c; ++i) { //Later: call clear set function
         a_set[i] = 0;
     }
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
     algorithm1(c, invq, a_set, neg_g_invh_gt, v, temp1, y);
-    compute_u(m, n, c, neg_invh_f, x, neg_invh_gt, y, temp2, u);
+    compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
 }
