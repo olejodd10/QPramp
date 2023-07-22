@@ -27,11 +27,6 @@ void scale_matrix(size_t m, size_t n, double mat[m][n], double c, double res[m][
 // res == m1 og res == m2 er lov
 void matrix_sum(size_t m, size_t n, double m1[m][n], double m2[m][n], double res[m][n]);
 
-// res == mat er lov men lol
-void matrix_copy(size_t m, size_t n, double mat[m][n], double res[m][n]);
-
-void eye(size_t n, double res[n][n]);
-
 // res == mat åpenbart ikke lov
 // Slow!
 void transpose(size_t m, size_t n, double mat[m][n], double res[n][m]);

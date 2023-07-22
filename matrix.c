@@ -50,21 +50,6 @@ void matrix_sum(size_t m, size_t n, double m1[m][n], double m2[m][n], double res
     }
 }
 
-// res == mat er lov men lol
-void matrix_copy(size_t m, size_t n, double mat[m][n], double res[m][n]) {
-    for (size_t i = 0; i < m; ++i) {
-        vector_copy(n, mat[i], res[i]);
-    }
-}
-
-void eye(size_t n, double res[n][n]) {
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < n; ++j) {
-            res[i][j] = i == j ? 1.0 : 0.0;
-        }
-    }
-}
-
 // res == mat åpenbart ikke lov
 // Slow!
 void transpose(size_t m, size_t n, double mat[m][n], double res[n][m]) {

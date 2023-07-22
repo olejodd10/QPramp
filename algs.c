@@ -71,7 +71,7 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg
         for (size_t i = 0; i < c; ++i) { // Adding the outer product column for column
             if (a_set[i]) {
                 if (i == index) { // Just inserted
-                    vector_copy(c, v, invq[i]);
+                    memcpy(invq[i], v, c*sizeof(double));
                     invq[i][i] += 1.0; // Pretend there was a unit vector in the column to start with
                 } else {
                     add_scaled_vector(c, invq[i], v, invq[i][index], invq[i]);
@@ -97,9 +97,7 @@ static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], dou
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
 void algorithm2(size_t c, size_t n, size_t m, double neg_g_invh_gt[c][c], double neg_s[c][n], double neg_w[c], double neg_invh_f[m][n], double neg_g_invh[c][m], double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double u[m]) {
-    for (size_t i = 0; i < c; ++i) { //Later: call clear set function
-        a_set[i] = 0;
-    }
+    memset(a_set, 0, c);
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
     algorithm1(c, invq, a_set, neg_g_invh_gt, v, y);

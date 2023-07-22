@@ -21,7 +21,4 @@ void vector_sum(size_t n, double v1[n], double v2[n], double res[n]);
 // res == v1 og res == v2 er lov
 void add_scaled_vector(size_t n, double v1[n], double v2[n], double c, double res[n]);
 
-// res == vec er lov men lol
-void vector_copy(size_t n, double vec[n], double res[n]); 
-
 #endif

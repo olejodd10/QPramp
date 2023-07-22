@@ -43,11 +43,3 @@ void add_scaled_vector(size_t n, double v1[n], double v2[n], double c, double re
         res[i] = v1[i] + c*v2[i];
     }
 }
-
-// res == vec er lov men lol
-void vector_copy(size_t n, double vec[n], double res[n]) {
-    for (size_t i = 0; i < n; ++i) {
-        res[i] = vec[i];
-    }
-}
-
