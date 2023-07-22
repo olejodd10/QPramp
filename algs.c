@@ -32,32 +32,28 @@ static ssize_t most_positive_index(size_t c, uint8_t a_set[c], double y[c]) {
     return index;
 }
 
-static void compute_v(size_t c, double invq[c][c], uint8_t a_set[c], size_t index, double neg_g_invh_gt[c][c], double temp[c], double v[c]) {
-    vector_copy(c, neg_g_invh_gt[index], temp); // This row is the same as the desired column since the matrix is symmetric
-    if (!a_set[index]) {
-        temp[index] += 1.0;
-    }
+static void compute_v(size_t c, double invq[c][c], uint8_t a_set[c], size_t index, double neg_g_invh_gt[c][c], double v[c]) {
     // Compute matrix vector product
     // Sparse part
     for (size_t i = 0; i < c; ++i) {
-        v[i] = a_set[i] ? 0.0 : temp[i]; // 0.0 because the "dense part" computation takes care of the value
+        v[i] = a_set[i] ? 0.0 : (i == index ? neg_g_invh_gt[index][i] + 1.0 : neg_g_invh_gt[index][i]); // 0.0 because the "dense part" computation takes care of the value
     }
     // Dense part
     for (size_t i = 0; i < c; ++i) {
         if (a_set[i]) {
-            add_scaled_vector(c, v, invq[i], temp[i], v);
+            add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i], v);
         }
     }
 }
 
 // Terminal results are written to and available from a_set, invq and y
 // v can be anything - call it temp?
-static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg_g_invh_gt[c][c], double v[c], double temp1[c], double y[c]) {
+static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg_g_invh_gt[c][c], double v[c], double y[c]) {
     while (1) {
         double q0 = 1.0;
         ssize_t index = most_negative_index(c, a_set, y);
         if (index >= 0) {
-            compute_v(c, invq, a_set, index, neg_g_invh_gt, temp1, v);
+            compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
             a_set[index] = 0;
         } else {
             index = most_positive_index(c, a_set, y);
@@ -65,7 +61,7 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg
                 // printf("y and A are compatible\n");
                 break;
             }
-            compute_v(c, invq, a_set, index, neg_g_invh_gt, temp1, v);
+            compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
             a_set[index] = 1;
             q0 = -1.0;
         }
@@ -100,12 +96,12 @@ static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], dou
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-void algorithm2(size_t c, size_t n, size_t m, double neg_g_invh_gt[c][c], double neg_s[c][n], double neg_w[c], double neg_invh_f[m][n], double neg_g_invh[c][m], double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double temp1[c], double u[m]) {
+void algorithm2(size_t c, size_t n, size_t m, double neg_g_invh_gt[c][c], double neg_s[c][n], double neg_w[c], double neg_invh_f[m][n], double neg_g_invh[c][m], double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double u[m]) {
     for (size_t i = 0; i < c; ++i) { //Later: call clear set function
         a_set[i] = 0;
     }
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
-    algorithm1(c, invq, a_set, neg_g_invh_gt, v, temp1, y);
+    algorithm1(c, invq, a_set, neg_g_invh_gt, v, y);
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
 }
