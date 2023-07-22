@@ -1,4 +1,5 @@
 CC = gcc
+FLAGS = -Ofast
 BUILDDIR = build
 SOURCES = $(wildcard *.c)
 OBJECTS = $(patsubst %.c, $(BUILDDIR)/%.o, $(SOURCES)) 
@@ -14,10 +15,10 @@ $(BUILDDIR):
 	mkdir $@
 
 $(BUILDDIR)/%.o: %.c | $(BUILDDIR)
-	$(CC) -c $< -o $@
+	$(CC) $(FLAGS) -c $< -o $@
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $^ -o $(EXECUTABLE)
+	$(CC) $(FLAGS) $^ -o $(EXECUTABLE)
 
 clean:
 	rm -rf $(BUILDDIR)
