@@ -86,7 +86,7 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg
 
 static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], double x[n], double neg_g_invh[c][m], double y[c], double u[m]) {
     matrix_vector_product(m, n, neg_invh_f, x, u);
-    for (int i = 0; i < c; ++i) {
+    for (size_t i = 0; i < c; ++i) {
         if (y[i] > 0.0) {
             add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
         }

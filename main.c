@@ -30,6 +30,8 @@
 #endif
 #define P HORIZON*M
 
+#define SWAP(a,b) { typeof(a) SWAP = a; a = b; b = SWAP; }
+
 #define STR(x) STR2(x)
 #define STR2(x) #x
 #define EXAMPLE_PATH "../examples/example" STR(EXAMPLE)
@@ -43,10 +45,9 @@
 #define S_PATH EXAMPLE_PATH "/s.csv"
 #define F_PATH EXAMPLE_PATH "/f.csv"
 
-static double x[N];
 static double a[N][N];
 static double b[N][M];
-
+static double x0[N];
 static double invh[P][P];
 static double w[C];
 static double g[C][P];
@@ -66,7 +67,7 @@ static double y[C];
 static double v[C];
 static double invq[C][C];
 static uint8_t a_set[C]; // Lookup table to represent set for now
-static double temp2[N];
+static double x1[N];
     
 static double u[M];
 
@@ -90,7 +91,7 @@ int main() {
         printf("Error while parsing input matrix f_b.\n"); 
         return 1;
     }
-    if (parse_vector_csv(f_x0, N, x)) { 
+    if (parse_vector_csv(f_x0, N, x0)) { 
         printf("Error while parsing input vector f_x0.\n"); 
         return 1;
     }
@@ -139,14 +140,17 @@ int main() {
     printf("Initialization time: %d ms\n", tock());
 
     // Simulation
+    double* x0_p = x0;
+    double* x1_p = x1;
     tick();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x, invq, a_set, y, v, u);
-        simulate(N, M, a, x, b, u, temp2, x); 
+        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x0_p, invq, a_set, y, v, u);
+        simulate(N, M, a, x0_p, b, u, x1_p); 
+        SWAP(x0_p, x1_p);
     }
     printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
     printf("Simulation finished with the following state vector:\n");
-    print_vector(N, x);
+    print_vector(N, x0);
 
     return 0;
 }
