@@ -8,42 +8,42 @@
 #include "lti.h"
 #include "timing.h"
 
-#define SIMULATION_TIMESTEPS 100
-
-#define EXAMPLE 3
-
-#if EXAMPLE == 1
-    #define N 2
-    #define M 1
-    #define HORIZON 10
-    #define C 66 
-#elif EXAMPLE == 2
-    #define N 4
-    #define M 2
-    #define HORIZON 30
-    #define C 316 
-#elif EXAMPLE == 3
-    #define N 25
-    #define M 4
-    #define HORIZON 30
-    #define C 1560 
+#ifndef SIMULATION_TIMESTEPS
+#error "SIMULATION_TIMESTEPS not set"
 #endif
+
+#ifndef N
+#error "N not set"
+#endif
+
+#ifndef M
+#error "M not set"
+#endif
+
+#ifndef HORIZON
+#error "HORIZON not set"
+#endif
+
+#ifndef C
+#error "C not set"
+#endif
+
 #define P HORIZON*M
 
+#ifndef INPUT_DIR
+#error "INPUT_DIR not set"
+#endif
+
+#define A_PATH INPUT_DIR "/a.csv"
+#define B_PATH INPUT_DIR "/b.csv"
+#define X0_PATH INPUT_DIR "/x0.csv"
+#define INVH_PATH INPUT_DIR "/invh.csv"
+#define W_PATH INPUT_DIR "/w.csv"
+#define G_PATH INPUT_DIR "/g.csv"
+#define S_PATH INPUT_DIR "/s.csv"
+#define F_PATH INPUT_DIR "/f.csv"
+
 #define SWAP(a,b) { typeof(a) SWAP = a; a = b; b = SWAP; }
-
-#define STR(x) STR2(x)
-#define STR2(x) #x
-#define EXAMPLE_PATH "../examples/example" STR(EXAMPLE)
-
-#define A_PATH EXAMPLE_PATH "/a.csv"
-#define B_PATH EXAMPLE_PATH "/b.csv"
-#define X0_PATH EXAMPLE_PATH "/x0.csv"
-#define INVH_PATH EXAMPLE_PATH "/invh.csv"
-#define W_PATH EXAMPLE_PATH "/w.csv"
-#define G_PATH EXAMPLE_PATH "/g.csv"
-#define S_PATH EXAMPLE_PATH "/s.csv"
-#define F_PATH EXAMPLE_PATH "/f.csv"
 
 static double a[N][N];
 static double b[N][M];
