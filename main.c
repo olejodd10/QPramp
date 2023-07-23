@@ -4,7 +4,7 @@
 #include "algs.h"
 #include "vector.h"
 #include "matrix.h"
-#include "parse.h"
+#include "csv.h"
 #include "lti.h"
 #include "timing.h"
 
@@ -72,58 +72,39 @@ static double x1[N];
 static double u[M];
 
 int main() {
-    // The buffers probably take a lot of memory
     tick();
-    FILE* f_a = fopen(A_PATH, "r");
-    FILE* f_b = fopen(B_PATH, "r");
-    FILE* f_x0 = fopen(X0_PATH, "r");
-    FILE* f_invh = fopen(INVH_PATH, "r");
-    FILE* f_w = fopen(W_PATH, "r");
-    FILE* f_g = fopen(G_PATH, "r");
-    FILE* f_s = fopen(S_PATH, "r");
-    FILE* f_f = fopen(F_PATH, "r");
-
-    if (parse_matrix_csv(f_a, N, N, a)) { 
-        printf("Error while parsing input matrix f_a.\n"); 
+    if (parse_matrix_csv(A_PATH, N, N, a)) { 
+        printf("Error while parsing input matrix a.\n"); 
         return 1;
     }
-    if (parse_matrix_csv(f_b, N, M, b)) { 
-        printf("Error while parsing input matrix f_b.\n"); 
+    if (parse_matrix_csv(B_PATH, N, M, b)) { 
+        printf("Error while parsing input matrix b.\n"); 
         return 1;
     }
-    if (parse_vector_csv(f_x0, N, x0)) { 
-        printf("Error while parsing input vector f_x0.\n"); 
+    if (parse_vector_csv(X0_PATH, N, x0)) { 
+        printf("Error while parsing input vector x0.\n"); 
         return 1;
     }
-    if (parse_matrix_csv(f_invh, P, P, invh)) { 
-        printf("Error while parsing input matrix f_invh.\n"); 
+    if (parse_matrix_csv(INVH_PATH, P, P, invh)) { 
+        printf("Error while parsing input matrix invh.\n"); 
         return 1; 
     }
-    if (parse_vector_csv(f_w, C, w)) { 
-        printf("Error while parsing input vector f_w.\n"); 
+    if (parse_vector_csv(W_PATH, C, w)) { 
+        printf("Error while parsing input vector w.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(f_g, C, P, g)) { 
-        printf("Error while parsing input matrix f_g.\n"); 
+    if (parse_matrix_csv(G_PATH, C, P, g)) { 
+        printf("Error while parsing input matrix g.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(f_s, C, N, s)) { 
-        printf("Error while parsing input matrix f_s.\n"); 
+    if (parse_matrix_csv(S_PATH, C, N, s)) { 
+        printf("Error while parsing input matrix s.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(f_f, P, N, f)) { 
-        printf("Error while parsing input matrix f_f.\n"); 
+    if (parse_matrix_csv(F_PATH, P, N, f)) { 
+        printf("Error while parsing input matrix f.\n"); 
         return 1; 
     }
-
-    fclose(f_a);
-    fclose(f_b);
-    fclose(f_x0);
-    fclose(f_invh);
-    fclose(f_w);
-    fclose(f_g);
-    fclose(f_s);
-    fclose(f_f);
     printf("Input parsing time: %d ms\n", tock());
 
     // Other initialization
