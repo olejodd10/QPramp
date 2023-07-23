@@ -2,7 +2,7 @@
 
 #define EPS 2.2204e-15
 
-static ssize_t most_negative_index(size_t c, uint8_t a_set[c], double y[c]) {
+static ssize_t most_negative_index(size_t c, const uint8_t a_set[c], double y[c]) {
     double min = y[0];
     size_t index = 0;
     for (size_t i = 1; i < c; ++i) {
@@ -17,7 +17,7 @@ static ssize_t most_negative_index(size_t c, uint8_t a_set[c], double y[c]) {
     return index;
 }
 
-static ssize_t most_positive_index(size_t c, uint8_t a_set[c], double y[c]) {
+static ssize_t most_positive_index(size_t c, const uint8_t a_set[c], double y[c]) {
     double max = y[0];
     size_t index = 0;
     for (size_t i = 1; i < c; ++i) {
@@ -32,7 +32,7 @@ static ssize_t most_positive_index(size_t c, uint8_t a_set[c], double y[c]) {
     return index;
 }
 
-static void compute_v(size_t c, double invq[c][c], uint8_t a_set[c], size_t index, double neg_g_invh_gt[c][c], double v[c]) {
+static void compute_v(size_t c, const double invq[c][c], const uint8_t a_set[c], size_t index, const double neg_g_invh_gt[c][c], double v[c]) {
     // Compute matrix vector product
     // Sparse part
     for (size_t i = 0; i < c; ++i) {
@@ -48,7 +48,7 @@ static void compute_v(size_t c, double invq[c][c], uint8_t a_set[c], size_t inde
 
 // Terminal results are written to and available from a_set, invq and y
 // v can be anything - call it temp?
-static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg_g_invh_gt[c][c], double v[c], double y[c]) {
+static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], const double neg_g_invh_gt[c][c], double v[c], double y[c]) {
     while (1) {
         double q0 = 1.0;
         ssize_t index = most_negative_index(c, a_set, y);
@@ -84,7 +84,7 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], double neg
     }
 }
 
-static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], double x[n], double neg_g_invh[c][m], double y[c], double u[m]) {
+static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
     matrix_vector_product(m, n, neg_invh_f, x, u);
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > 0.0) {
@@ -96,7 +96,7 @@ static void compute_u(size_t m, size_t n, size_t c, double neg_invh_f[m][n], dou
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-void algorithm2(size_t c, size_t n, size_t m, double neg_g_invh_gt[c][c], double neg_s[c][n], double neg_w[c], double neg_invh_f[m][n], double neg_g_invh[c][m], double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double u[m]) {
+void algorithm2(size_t c, size_t n, size_t m, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double invq[c][c], uint8_t a_set[c], double y[c], double v[c], double u[m]) {
     memset(a_set, 0, c);
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
