@@ -1,6 +1,8 @@
 #include "algs.h"
 
-#define EPS 2.2204e-15
+#ifndef EPS
+#error "EPS not set"
+#endif
 
 static ssize_t most_negative_index(size_t c, const uint8_t a_set[c], double y[c]) {
     double min = y[0];
@@ -87,7 +89,7 @@ static void algorithm1(size_t c, double invq[c][c], uint8_t a_set[c], const doub
 static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
     matrix_vector_product(m, n, neg_invh_f, x, u);
     for (size_t i = 0; i < c; ++i) {
-        if (y[i] > 0.0) {
+        if (y[i] > EPS) {
             add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
         }
     }

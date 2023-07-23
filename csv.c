@@ -1,5 +1,9 @@
 #include "csv.h"
 
+#ifndef WRITE_FORMAT
+#error "WRITE_FORMAT not set"
+#endif
+
 static size_t parse_matrix_csv_height(FILE* f) {
     size_t count = 0;
     fpos_t pos;
