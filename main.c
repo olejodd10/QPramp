@@ -131,7 +131,7 @@ int main() {
     }
     printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
     printf("Simulation finished with the following state vector:\n");
-    print_vector(N, x0);
+    print_vector(N, x0_p);
 
     return 0;
 }
