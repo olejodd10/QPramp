@@ -23,7 +23,7 @@ static ssize_t most_positive_index(size_t c, const uint8_t a_set[c], double y[c]
     double max = y[0];
     size_t index = 0;
     for (size_t i = 1; i < c; ++i) {
-        if (!a_set[i] && y[i] > max) {
+        if (y[i] > max && !a_set[i]) {
             max = y[i];
             index = i;
         }    
