@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include "algs.h"
+#include "iterable_set.h"
 #include "vector.h"
 #include "matrix.h"
 #include "csv.h"
@@ -66,10 +67,18 @@ static double neg_g_invh_gt[C][C];
 static double y[C];
 static double v[C];
 static double invq[C][C];
-static uint8_t a_set[C]; // Lookup table to represent set for now
 static double x1[N];
-    
 static double u[M];
+
+static uint8_t setarr1[C]; 
+static ssize_t setarr2[C]; 
+static ssize_t setarr3[C]; 
+static iterable_set_t a_set = {
+    .capacity = C,
+    .elements = setarr1,
+    .next = setarr2,
+    .prev = setarr3,
+};
 
 int main() {
     tick();
@@ -118,6 +127,7 @@ int main() {
     matrix_product(C, P, P, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
     matrix_product(C, P, M, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
+    set_init(&a_set);
     printf("Initialization time: %d ms\n", tock());
 
     // Simulation
@@ -125,7 +135,7 @@ int main() {
     double* x1_p = x1;
     tick();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x0_p, invq, a_set, y, v, u);
+        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x0_p, invq, &a_set, y, v, u);
         simulate(N, M, a, x0_p, b, u, x1_p); 
         SWAP(x0_p, x1_p);
     }

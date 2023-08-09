@@ -8,7 +8,7 @@ CC := gcc
 FLAGS := -Ofast $(DEFINE_FLAGS)
 BUILD_DIR := build
 EXECUTABLE := main
-SOURCES := algs.c csv.c timing.c vector.c matrix.c lti.c $(EXECUTABLE).c
+SOURCES := algs.c csv.c timing.c vector.c matrix.c lti.c iterable_set.c $(EXECUTABLE).c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
 SAVE_VECTORS := neg_w 
