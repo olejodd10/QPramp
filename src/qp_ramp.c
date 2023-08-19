@@ -66,9 +66,9 @@ static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a
     // Dense part
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) {
-            add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i] + 1.0, v);
+            cblas_daxpy(c, neg_g_invh_gt[index][i] + 1.0, invq[i], 1, v, 1);
         } else {
-            add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i], v);
+            cblas_daxpy(c, neg_g_invh_gt[index][i], invq[i], 1, v, 1);
         }
     }
 }
@@ -101,17 +101,17 @@ static void update_y_and_invq(size_t c, size_t index, double q0, const iterable_
         printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
     }
     // Update invq
-    scale_vector(c, v, -1.0/qdiv, v);
+    cblas_dscal(c, -1.0/qdiv, v, 1);
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) { // Just inserted
             memcpy(invq[i], v, c*sizeof(double));
             invq[i][i] += 1.0; // Pretend there was a unit vector in the column to start with
         } else {
-            add_scaled_vector(c, invq[i], v, invq[i][index], invq[i]);
+            cblas_daxpy(c, invq[i][index], v, 1, invq[i], 1);
         }
     }
     // Update y
-    add_scaled_vector(c, y, v, y[index], y);
+    cblas_daxpy(c, y[index], v, 1, y, 1);
 }
 
 // Terminal results are written to and available from a_set, invq and y
@@ -151,7 +151,7 @@ static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n
     cblas_dgemv(CblasRowMajor, CblasNoTrans, m, n, 1.0, (const double*)neg_invh_f, n, x, 1, 0.0, u, 1);
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > QP_RAMP_EPS) {
-            add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
+            cblas_daxpy(m, y[i], neg_g_invh[i], 1, u, 1);
         }
     }
 }
@@ -160,7 +160,7 @@ static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const d
     memset(z, 0, sizeof(double)*p);
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > QP_RAMP_EPS) {
-            add_scaled_vector(p, z, neg_g_invh[i], y[i], z);
+            cblas_daxpy(p, y[i], neg_g_invh[i], 1, z, 1);
         }
     }
 }
@@ -168,7 +168,7 @@ static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const d
 void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
     set_clear(&a_set);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, c, n, 1.0, (const double*)neg_s, n, x, 1, 0.0, y, 1);
-    vector_sum(c, y, neg_w, y);
+    cblas_daxpy(c, 1.0, neg_w, 1, y, 1);
     algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_z(c, p, neg_g_invh, y, z);
 }
@@ -179,7 +179,7 @@ void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c
 void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
     set_clear(&a_set);
     cblas_dgemv(CblasRowMajor, CblasNoTrans, c, n, 1.0, (const double*)neg_s, n, x, 1, 0.0, y, 1);
-    vector_sum(c, y, neg_w, y);
+    cblas_daxpy(c, 1.0, neg_w, 1, y, 1);
     algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
 }
