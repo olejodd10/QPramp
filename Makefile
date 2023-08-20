@@ -9,7 +9,7 @@ LIBS := -lm
 LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS)
 
 ARCHIVE := libqpramp.a
-SOURCES := qp_ramp.c vector.c matrix.c iterable_set.c
+SOURCES := qp_ramp.c vector.c matrix.c iterable_set.c thread_pool.c parallelism.c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
 EXAMPLE := main
@@ -22,7 +22,7 @@ MEX_FILES := $(patsubst %, $(MEX_DIR)/%.mexa64, $(MEX_FUNCTIONS))
 MATLAB_PATH := /home/ole/programs/matlab/bin/matlab
 
 CC := gcc
-FLAGS := -Ofast -g
+FLAGS := -Ofast -g -lpthread
 
 .PHONY: all clean lib mex
 all: $(EXAMPLE)

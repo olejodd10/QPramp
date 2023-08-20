@@ -10,6 +10,8 @@
 #include "matrix.h"
 #include "vector.h"
 #include "iterable_set.h"
+#include "thread_pool.h"
+#include "parallelism.h"
 
 // Allocates memory for solver
 void qp_ramp_init(size_t c);

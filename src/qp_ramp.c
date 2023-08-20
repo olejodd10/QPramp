@@ -16,6 +16,7 @@ void qp_ramp_init(size_t c) {
 	v = (double*)malloc(c*sizeof(double));
     invq = (double*)malloc(c*c*sizeof(double));
     set_init(&a_set, c);
+    thread_pool_init();
 }
 
 void qp_ramp_cleanup(void) {
@@ -148,7 +149,7 @@ static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_
 }
 
 static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
-    matrix_vector_product(m, n, neg_invh_f, x, u);
+    matrix_vector_product(m, n, neg_invh_f, x, u); // Typically few inputs, so parallelization overhead is not worth it
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > QP_RAMP_EPS) {
             add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
@@ -178,7 +179,7 @@ void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c
 // Note that y is modified
 void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
     set_clear(&a_set);
-    matrix_vector_product(c, n, neg_s, x, y);
+    parallel_matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
     algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
