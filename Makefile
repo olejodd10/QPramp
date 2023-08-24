@@ -1,11 +1,11 @@
 SRC_DIR := src
 BUILD_DIR := build
 
-INCLUDE_PATHS := include
+INCLUDE_PATHS := include /home/ole/repos/qp-ramp/BLAS/OpenBLAS/include
 INCLUDE_FLAGS := $(addprefix -I, $(INCLUDE_PATHS))
 
-LIB_PATHS := 
-LIBS := -lm
+LIB_PATHS := /home/ole/repos/qp-ramp/BLAS/OpenBLAS/lib
+LIBS := -lm -l:libopenblas.a
 LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS)
 
 ARCHIVE := libqpramp.a
