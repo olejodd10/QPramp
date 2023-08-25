@@ -43,7 +43,11 @@ static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a
     }
     // Dense part
     for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
-        add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i], v);
+        if (i == index) {
+            add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i] + 1.0, v);
+        } else {
+            add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i], v);
+        }
     }
 }
 
