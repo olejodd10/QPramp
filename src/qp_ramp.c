@@ -166,9 +166,13 @@ static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const d
 }
 
 void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
-    set_clear(&a_set);
-    matrix_vector_product(c, n, neg_s, x, y);
-    vector_sum(c, y, neg_w, y);
+    matrix_vector_product(c, n, neg_s, x, v); // Use v temporarily; it will be overwritten later
+    vector_sum(c, v, neg_w, v);
+    memcpy(y, v, c*sizeof(double));
+    for (size_t i = set_first(&a_set); i != set_end(&a_set); i = set_next(&a_set, i)) {
+        add_scaled_vector(c, y, &invq[c*i], v[i], y);
+        y[i] -= v[i];
+    }
     algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_z(c, p, neg_g_invh, y, z);
 }
@@ -177,9 +181,13 @@ void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
 void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
-    set_clear(&a_set);
-    matrix_vector_product(c, n, neg_s, x, y);
-    vector_sum(c, y, neg_w, y);
+    matrix_vector_product(c, n, neg_s, x, v); // Use v temporarily; it will be overwritten later
+    vector_sum(c, v, neg_w, v);
+    memcpy(y, v, c*sizeof(double));
+    for (size_t i = set_first(&a_set); i != set_end(&a_set); i = set_next(&a_set, i)) {
+        add_scaled_vector(c, y, &invq[c*i], v[i], y);
+        y[i] -= v[i];
+    }
     algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
 }
