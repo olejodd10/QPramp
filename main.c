@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "algs.h"
 #include "iterable_set.h"
@@ -8,6 +9,10 @@
 #include "csv.h"
 #include "lti.h"
 #include "timing.h"
+
+#ifndef TEST_CASES
+#error "TEST_CASES not set"
+#endif
 
 #ifndef SIMULATION_TIMESTEPS
 #error "SIMULATION_TIMESTEPS not set"
@@ -44,11 +49,13 @@
 #define S_PATH INPUT_DIR "/s.csv"
 #define F_PATH INPUT_DIR "/f.csv"
 
-#define SWAP(a,b) { typeof(a) SWAP = a; a = b; b = SWAP; }
+#define X_DIR OUTPUT_DIR
+#define U_DIR OUTPUT_DIR
+#define T_DIR OUTPUT_DIR
 
 static double a[N][N];
 static double b[N][M];
-static double x0[N];
+static double x0[TEST_CASES][N];
 static double invh[P][P];
 static double w[C];
 static double g[C][P];
@@ -67,8 +74,9 @@ static double neg_g_invh_gt[C][C];
 static double y[C];
 static double v[C];
 static double invq[C][C];
-static double x1[N];
-static double u[M];
+static double x[SIMULATION_TIMESTEPS+1][N];
+static double u[SIMULATION_TIMESTEPS][M];
+static double t[SIMULATION_TIMESTEPS];
 
 static uint8_t setarr1[C]; 
 static ssize_t setarr2[C]; 
@@ -91,8 +99,8 @@ int main() {
         printf("Error while parsing input matrix b.\n"); 
         return 1;
     }
-    if (parse_vector_csv(X0_PATH, N, x0)) { 
-        printf("Error while parsing input vector x0.\n"); 
+    if (parse_matrix_csv(X0_PATH, TEST_CASES, N, x0)) { 
+        printf("Error while parsing input matrix x0.\n"); 
         return 1;
     }
     if (parse_matrix_csv(INVH_PATH, P, P, invh)) { 
@@ -132,17 +140,43 @@ int main() {
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
-    double* x0_p = x0;
-    double* x1_p = x1;
-    timing_reset();
-    for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
-        algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x0_p, invq, &a_set, y, v, u);
-        simulate(N, M, a, x0_p, b, u, x1_p); 
-        SWAP(x0_p, x1_p);
+    double total_time = 0.0;
+    for (uint16_t i = 0; i < TEST_CASES; ++i) {
+        // Initial state
+        memcpy(x[0], x0[i], sizeof(double)*N);
+
+        double test_case_time = 0.0;
+        for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
+            timing_reset();
+            algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x[j], invq, &a_set, y, v, u[j]);
+            simulate(N, M, a, x[j], b, u[j], x[j+1]); 
+            t[j] = (double)timing_elapsed();
+            test_case_time += t[j];
+        }
+        total_time += test_case_time;
+
+        // Test case result printing
+        printf("Total simulation time for %d iterations of test case %d: %.0f us\n", SIMULATION_TIMESTEPS, i, test_case_time/1000);
+        print_vector(N, x[SIMULATION_TIMESTEPS]);
+
+        // Save test case results
+        char str[80];
+        sprintf(str, X_DIR "/xout%d.csv", i);
+        if (save_matrix_csv(str, SIMULATION_TIMESTEPS+1, N, x) < 0) {
+            printf("Error while saving x.\n");
+        }
+        sprintf(str, U_DIR "/uout%d.csv", i);
+        if (save_matrix_csv(str, SIMULATION_TIMESTEPS, M, u) < 0) {
+            printf("Error while saving u.\n");
+        }
+        sprintf(str, T_DIR "/tout%d.csv", i);
+        if (save_vector_csv(str, SIMULATION_TIMESTEPS, t) < 0) {
+            printf("Error while saving t.\n");
+        }
     }
-    printf("Simulation time for %d iterations: %ld us\n", SIMULATION_TIMESTEPS, timing_elapsed()/1000);
-    printf("Simulation finished with the following state vector:\n");
-    print_vector(N, x0_p);
+
+    // Summary
+    printf("Average time per test case running %d timesteps: %.0f us\n", SIMULATION_TIMESTEPS, total_time/1000/TEST_CASES);
 
     return 0;
 }
