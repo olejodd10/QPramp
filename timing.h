@@ -2,10 +2,12 @@
 #define TIMING_H
 
 #include <time.h>
+#include <stdio.h>
 
-void tick();
+void timing_print_precision();
 
-// Returns elapsed time since tick in milliseconds
-int tock();
+void timing_reset();
+
+long timing_elapsed();
 
 #endif

@@ -81,7 +81,8 @@ static iterable_set_t a_set = {
 };
 
 int main() {
-    tick();
+    timing_print_precision();
+    timing_reset();
     if (parse_matrix_csv(A_PATH, N, N, a)) { 
         printf("Error while parsing input matrix a.\n"); 
         return 1;
@@ -114,10 +115,10 @@ int main() {
         printf("Error while parsing input matrix f.\n"); 
         return 1; 
     }
-    printf("Input parsing time: %d ms\n", tock());
+    printf("Input parsing time: %ld us\n", timing_elapsed()/1000);
 
     // Other initialization
-    tick();
+    timing_reset();
     negate_vector(C, w, neg_w);
     negate_matrix(C, N, s, neg_s);
     transpose(P, N, f, ft);
@@ -128,18 +129,18 @@ int main() {
     matrix_product(C, P, C, g, neg_g_invh, neg_g_invh_gt);
     matrix_product(C, P, M, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
     set_init(&a_set);
-    printf("Initialization time: %d ms\n", tock());
+    printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
     double* x0_p = x0;
     double* x1_p = x1;
-    tick();
+    timing_reset();
     for (uint16_t i = 0; i < SIMULATION_TIMESTEPS; ++i) {
         algorithm2(C, N, M, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x0_p, invq, &a_set, y, v, u);
         simulate(N, M, a, x0_p, b, u, x1_p); 
         SWAP(x0_p, x1_p);
     }
-    printf("Simulation time for %d iterations: %d ms\n", SIMULATION_TIMESTEPS, tock());
+    printf("Simulation time for %d iterations: %ld us\n", SIMULATION_TIMESTEPS, timing_elapsed()/1000);
     printf("Simulation finished with the following state vector:\n");
     print_vector(N, x0_p);
 
