@@ -59,3 +59,14 @@ void transpose(size_t m, size_t n, const double mat[m][n], double res[n][m]) {
         }
     }
 }
+
+uint8_t matrix_eq(size_t m, size_t n, const double m1[m][n], const double m2[m][n]) {
+    for (size_t i = 0; i < m; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            if (fabs(m1[i][j] - m2[i][j]) > EPS) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}

@@ -53,6 +53,13 @@
 #define U_DIR OUTPUT_DIR
 #define T_DIR OUTPUT_DIR
 
+#ifdef REFERENCE_DIR
+#define X_REF_DIR REFERENCE_DIR
+#define U_REF_DIR REFERENCE_DIR
+static double x_ref[SIMULATION_TIMESTEPS+1][N];
+static double u_ref[SIMULATION_TIMESTEPS][M];
+#endif
+
 static double a[N][N];
 static double b[N][M];
 static double x0[TEST_CASES][N];
@@ -156,21 +163,44 @@ int main() {
         total_time += test_case_time;
 
         // Test case result printing
-        printf("Total simulation time for %d iterations of test case %d: %.0f us\n", SIMULATION_TIMESTEPS, i, test_case_time/1000);
-        print_vector(N, x[SIMULATION_TIMESTEPS]);
+        // printf("Total simulation time for %d iterations of test case %d: %.0f us\n", SIMULATION_TIMESTEPS, i, test_case_time/1000);
+        // print_vector(N, x[SIMULATION_TIMESTEPS]);
+
+        char path[80];
+        #ifdef REFERENCE_DIR
+        // Verify test case results
+        sprintf(path, X_REF_DIR "/xout%d.csv", i);
+        FILE* f = fopen(path, "r");
+        if (parse_matrix_csv(path, SIMULATION_TIMESTEPS+1, N, x_ref)) {
+            printf("Error while parsing reference matrix x_ref.\n"); 
+        }
+        if (!matrix_eq(SIMULATION_TIMESTEPS+1, N, x, x_ref)) {
+            printf("WARNING: Verification failed for x in test case %d\n", i);
+        }
+        fclose(f);
+
+        sprintf(path, U_REF_DIR "/uout%d.csv", i);
+        f = fopen(path, "r");
+        if (parse_matrix_csv(path, SIMULATION_TIMESTEPS, M, u_ref)) {
+            printf("Error while parsing reference matrix u_ref.\n"); 
+        }
+        if (!matrix_eq(SIMULATION_TIMESTEPS, M, u, u_ref)) {
+            printf("WARNING: Verification failed for u in test case %d\n", i);
+        }
+        fclose(f);
+        #endif
 
         // Save test case results
-        char str[80];
-        sprintf(str, X_DIR "/xout%d.csv", i);
-        if (save_matrix_csv(str, SIMULATION_TIMESTEPS+1, N, x) < 0) {
+        sprintf(path, X_DIR "/xout%d.csv", i);
+        if (save_matrix_csv(path, SIMULATION_TIMESTEPS+1, N, x) < 0) {
             printf("Error while saving x.\n");
         }
-        sprintf(str, U_DIR "/uout%d.csv", i);
-        if (save_matrix_csv(str, SIMULATION_TIMESTEPS, M, u) < 0) {
+        sprintf(path, U_DIR "/uout%d.csv", i);
+        if (save_matrix_csv(path, SIMULATION_TIMESTEPS, M, u) < 0) {
             printf("Error while saving u.\n");
         }
-        sprintf(str, T_DIR "/tout%d.csv", i);
-        if (save_vector_csv(str, SIMULATION_TIMESTEPS, t) < 0) {
+        sprintf(path, T_DIR "/tout%d.csv", i);
+        if (save_vector_csv(path, SIMULATION_TIMESTEPS, t) < 0) {
             printf("Error while saving t.\n");
         }
     }

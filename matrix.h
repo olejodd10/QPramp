@@ -1,7 +1,9 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+#include <stdint.h>
 #include <stddef.h>
+#include <math.h>
 #include "vector.h"
 
 // Do not use any of the functions to do operations on parts of a matrix, as the layout in memory may be unexpected and give errors.
@@ -30,5 +32,7 @@ void matrix_sum(size_t m, size_t n, const double m1[m][n], const double m2[m][n]
 // res == mat åpenbart ikke lov
 // Slow!
 void transpose(size_t m, size_t n, const double mat[m][n], double res[n][m]);
+
+uint8_t matrix_eq(size_t m, size_t n, const double m1[m][n], const double m2[m][n]);
 
 #endif
