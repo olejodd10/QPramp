@@ -2,13 +2,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "algs.h"
-#include "iterable_set.h"
 #include "vector.h"
 #include "matrix.h"
 #include "csv.h"
 #include "lti.h"
 #include "timing.h"
+
+#include "osqp.h"
+#include "cs.h"
+#include "auxil.h"
+#include "osqp_init.h"
 
 #ifndef TEST_CASES
 #error "TEST_CASES not set"
@@ -43,6 +46,7 @@
 #define A_PATH INPUT_DIR "/a.csv"
 #define B_PATH INPUT_DIR "/b.csv"
 #define X0_PATH INPUT_DIR "/x0.csv"
+#define H_PATH INPUT_DIR "/h.csv"
 #define INVH_PATH INPUT_DIR "/invh.csv"
 #define W_PATH INPUT_DIR "/w.csv"
 #define G_PATH INPUT_DIR "/g.csv"
@@ -63,6 +67,7 @@ static double u_ref[SIMULATION_TIMESTEPS][M_DIM];
 static double a[N_DIM][N_DIM];
 static double b[N_DIM][M_DIM];
 static double x0[TEST_CASES][N_DIM];
+static double h[P_DIM][P_DIM];
 static double invh[P_DIM][P_DIM];
 static double w[C_DIM];
 static double g[C_DIM][P_DIM];
@@ -70,30 +75,21 @@ static double s[C_DIM][N_DIM];
 static double f[P_DIM][N_DIM];
 
 static double ft[N_DIM][P_DIM];
-static double neg_w[C_DIM];
-static double neg_s[C_DIM][N_DIM];
-static double neg_invh[P_DIM][P_DIM]; // Only used once for initial setup
-static double neg_invh_f[M_DIM][N_DIM]; // Actually P_DIM x N_DIM, but we only need the M_DIM first rows
-static double neg_invh_gt[P_DIM][C_DIM];
-static double neg_g_invh[C_DIM][P_DIM];
-static double neg_g_invh_gt[C_DIM][C_DIM];
-    
-static double y[C_DIM];
-static double v[C_DIM];
-static double invq[C_DIM][C_DIM];
+static double invh_f[P_DIM][N_DIM];
+
+static c_int P_p[P_DIM+1];
+static c_int A_p[P_DIM+1];
+static c_float osqp_l[C_DIM];
+static c_float osqp_u[C_DIM];
+static c_float osqp_q[P_DIM];
+
 static double x[SIMULATION_TIMESTEPS+1][N_DIM];
 static double u[SIMULATION_TIMESTEPS][M_DIM];
 static double t[SIMULATION_TIMESTEPS];
 
-static uint8_t setarr1[C_DIM]; 
-static ssize_t setarr2[C_DIM]; 
-static ssize_t setarr3[C_DIM]; 
-static iterable_set_t a_set = {
-    .capacity = C_DIM,
-    .elements = setarr1,
-    .next = setarr2,
-    .prev = setarr3,
-};
+static void print_csc(csc *mat) {
+    printf("%lld %lld %lld %lld \n", mat->nzmax, mat->m, mat->n, mat->nz);
+}
 
 int main() {
     timing_print_precision();
@@ -109,6 +105,10 @@ int main() {
     if (parse_matrix_csv(X0_PATH, TEST_CASES, N_DIM, x0)) { 
         printf("Error while parsing input matrix x0.\n"); 
         return 1;
+    }
+    if (parse_matrix_csv(H_PATH, P_DIM, P_DIM, h)) { 
+        printf("Error while parsing input matrix h.\n"); 
+        return 1; 
     }
     if (parse_matrix_csv(INVH_PATH, P_DIM, P_DIM, invh)) { 
         printf("Error while parsing input matrix invh.\n"); 
@@ -132,19 +132,65 @@ int main() {
     }
     printf("Input parsing time: %ld us\n", timing_elapsed()/1000);
 
+    const size_t nnz_g = osqp_init_num_nonzero(C_DIM, P_DIM, g);
+    const size_t nnz_h = osqp_init_num_nonzero_symmetric(P_DIM, h);
+    c_float P_x[nnz_h];
+    c_int P_i[nnz_h];
+    c_float A_x[nnz_g];
+    c_int A_i[nnz_g];
+	memset(P_x, 0, sizeof(c_float)*nnz_h);
+	memset(P_i, 0, sizeof(c_int)*nnz_h);
+	memset(P_p, 0, sizeof(c_int)*(P_DIM+1));
+	memset(A_x, 0, sizeof(c_float)*nnz_g);
+	memset(A_i, 0, sizeof(c_int)*nnz_g);
+	memset(A_p, 0, sizeof(c_int)*(P_DIM+1));
+	memset(osqp_l, 0, sizeof(c_float)*C_DIM);
+	memset(osqp_u, 0, sizeof(c_float)*C_DIM);
+	memset(osqp_q, 0, sizeof(c_float)*P_DIM);
+
     // Other initialization
     timing_reset();
-    negate_vector(C_DIM, w, neg_w);
-    negate_matrix(C_DIM, N_DIM, s, neg_s);
     transpose(P_DIM, N_DIM, f, ft);
-    negate_matrix(P_DIM, P_DIM, invh, neg_invh);
-    matrix_product(M_DIM, P_DIM, N_DIM, neg_invh, ft, neg_invh_f);
-    matrix_product(P_DIM, P_DIM, C_DIM, neg_invh, g, neg_invh_gt);
-    matrix_product(C_DIM, P_DIM, P_DIM, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
-    matrix_product(C_DIM, P_DIM, C_DIM, g, neg_g_invh, neg_g_invh_gt);
-    matrix_product(C_DIM, P_DIM, M_DIM, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
-    set_init(&a_set);
+    matrix_product(P_DIM, P_DIM, N_DIM, invh, ft, invh_f);
+
+    // printf("Dette er nnz: %d %d\n", osqp_init_num_nonzero(P_DIM, P_DIM, h), osqp_init_num_nonzero(C_DIM, P_DIM, g));
+
+    // Populate constant matrices and vectors
+    osqp_init_populate_csc(C_DIM, P_DIM, nnz_g, g, A_x, A_i, A_p);
+    csc *osqp_a = csc_matrix(C_DIM, P_DIM, nnz_g, A_x, A_i, A_p);
+    osqp_init_populate_upper_triangular_csc(P_DIM, nnz_h, h, P_x, P_i, P_p);
+    csc *osqp_p = csc_matrix(P_DIM, P_DIM, nnz_h, P_x, P_i, P_p);
+    for (size_t i = 0; i < C_DIM; ++i) {
+        osqp_l[i] = -OSQP_INFTY;
+    }
+    memset(osqp_u, 0, sizeof(c_float)*P_DIM); // Overwritten later
+    memset(osqp_q, 0, sizeof(c_float)*P_DIM);
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
+
+    /* Solver, settings, matrices */
+    OSQPWorkspace   *workspace;
+    OSQPData data = (OSQPData) {
+        .n = P_DIM,
+        .m = C_DIM,
+        .P = osqp_p,
+        .A = osqp_a,
+        .q = osqp_q,
+        .l = osqp_l,
+        .u = osqp_u,
+    };
+    OSQPSettings    *settings;
+
+    /* Set default settings */
+    settings = (OSQPSettings *)malloc(sizeof(OSQPSettings));
+    if (settings) {
+        osqp_set_default_settings(settings);
+        settings->alpha = 1.0; /* Change alpha parameter */
+        settings->verbose = 0;
+    }
+
+    /* Setup workspace */
+    c_int exitflag = osqp_setup(&workspace, &data, settings);
+    // printf("Exitflag after setup: %lld\n", exitflag);
 
     // Simulation
     double total_time = 0.0;
@@ -155,10 +201,44 @@ int main() {
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
             timing_reset();
-            algorithm2(C_DIM, N_DIM, M_DIM, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x[j], invq, &a_set, y, v, u[j]);
+
+            // Update upper constraints
+            matrix_vector_product(C_DIM, N_DIM, s, x[j], osqp_u);
+            vector_sum(C_DIM, osqp_u, w, osqp_u);
+            exitflag = osqp_update_upper_bound(workspace, osqp_u);
+            // printf("Exitflag after upper bound update: %lld\n", exitflag);
+
+            /* Solve problem */
+            exitflag = osqp_solve(workspace);
+            // printf("Exitflag after solve: %lld\n", exitflag);
+            double *z = (double*)workspace->solution->x;
+            for (uint16_t k = 0; k < M_DIM; ++k) {
+                u[j][k] = z[k] - inner_product(N_DIM, invh_f[k], x[j]);
+            }
+
+            // Apply input
             simulate(N_DIM, M_DIM, a, x[j], b, u[j], x[j+1]); 
+
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
+
+            // printf("Solution z: ");
+            // for (uint16_t k = 0; k < P_DIM; ++k) {
+            //     printf("%.2e ", z[k]);
+            // }
+            // printf("\n");
+
+            // printf("Solution u: ");
+            // for (uint16_t k = 0; k < M_DIM; ++k) {
+            //     printf("%.2e ", u[j][k]);
+            // }
+            // printf("\n");
+
+            // printf("New x: ");
+            // for (uint16_t k = 0; k < N_DIM; ++k) {
+            //     printf("%.2e ", x[j][k]);
+            // }
+            // printf("\n");
         }
         total_time += test_case_time;
 
@@ -207,6 +287,10 @@ int main() {
 
     // Summary
     printf("Average time per test case running %d timesteps: %.0f us\n", SIMULATION_TIMESTEPS, total_time/1000/TEST_CASES);
+
+    /* Cleanup */
+    osqp_cleanup(workspace);
+    if (settings) free(settings);
 
     return 0;
 }

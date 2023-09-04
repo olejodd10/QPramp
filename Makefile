@@ -2,13 +2,18 @@ CONFIG := config.Makefile
 include $(CONFIG)
 
 INPUT_CSVS := $(patsubst %, $(INPUT_DIR_RAW)/%.csv, $(INPUT_VECTORS) $(INPUT_MATRICES))
+LIB_PATHS := /home/ole/repos/qp-ramp/BLAS/OpenBLAS/lib /home/ole/repos/qp-ramp/osqp-v0.6.3-Linux/lib
+LIBS := -l:libosqp.a -l:libopenblas.a -lm 
+LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS) 
+INCLUDE_PATHS := /home/ole/repos/qp-ramp/BLAS/OpenBLAS/include /home/ole/repos/qp-ramp/osqp-v0.6.3-Linux/include
+INCLUDE_FLAGS := $(addprefix -I, $(INCLUDE_PATHS))
 DEFINE_FLAGS := $(foreach val, $(DEFINES), -D$(val)=$($(val)))
 
 CC := gcc
-FLAGS := -Ofast $(DEFINE_FLAGS)
+FLAGS := -Ofast $(DEFINE_FLAGS) $(INCLUDE_FLAGS) $(LIB_FLAGS)
 BUILD_DIR := build
 EXECUTABLE := main
-SOURCES := algs.c csv.c timing.c vector.c matrix.c lti.c iterable_set.c $(EXECUTABLE).c
+SOURCES := algs.c csv.c timing.c vector.c matrix.c lti.c iterable_set.c osqp_init.c $(EXECUTABLE).c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
 SAVE_VECTORS := neg_w 
@@ -28,13 +33,13 @@ $(BUILD_DIR):
 	mkdir $@
 
 $(BUILD_DIR)/%.o: %.c $(CONFIG) | $(BUILD_DIR)
-	$(CC) $(FLAGS) -c $< -o $@
+	$(CC) -c $< -o $@ $(FLAGS) 
 
 $(EXECUTABLE): $(OBJECTS) $(CONFIG)
-	$(CC) $(FLAGS) $(OBJECTS) -o $@
+	$(CC) $(OBJECTS) -o $@ $(FLAGS) 
 
 $(SAVE_EXECUTABLE) : $(SAVE_OBJECTS) $(CONFIG)
-	$(CC) $(FLAGS) $(SAVE_OBJECTS) -o $@
+	$(CC) $(SAVE_OBJECTS) -o $@ $(FLAGS) 
 
 $(SAVE_CSVS): $(SAVE_EXECUTABLE) $(INPUT_CSVS)
 	./$<
