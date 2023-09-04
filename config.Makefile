@@ -4,20 +4,20 @@ EPS := 2.2204e-15
 
 EXAMPLE := 3
 ifeq ($(EXAMPLE), 1)
-    N := 2
-    M := 1
+    N_DIM := 2
+    M_DIM := 1
     HORIZON := 10
-    C := 66
+    C_DIM := 66
 else ifeq ($(EXAMPLE), 2)
-    N := 4
-    M := 2
+    N_DIM := 4
+    M_DIM := 2
     HORIZON := 30
-    C := 316
+    C_DIM := 316
 else ifeq ($(EXAMPLE), 3)
-    N := 25
-    M := 4
+    N_DIM := 25
+    M_DIM := 4
     HORIZON := 30
-    C := 1560
+    C_DIM := 1560
 endif
 
 INPUT_DIR_RAW := ../examples/example$(EXAMPLE)
@@ -30,4 +30,4 @@ INPUT_MATRICES := a b invh g s f
 
 WRITE_FORMAT := \"%.4le\"
 
-DEFINES := TEST_CASES SIMULATION_TIMESTEPS EPS N M HORIZON C INPUT_DIR OUTPUT_DIR WRITE_FORMAT REFERENCE_DIR
+DEFINES := TEST_CASES SIMULATION_TIMESTEPS EPS N_DIM M_DIM HORIZON C_DIM INPUT_DIR OUTPUT_DIR WRITE_FORMAT REFERENCE_DIR
