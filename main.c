@@ -48,7 +48,7 @@
 #define INVH_PATH INPUT_DIR "/invh.csv"
 #define W_PATH INPUT_DIR "/w.csv"
 #define G_PATH INPUT_DIR "/g.csv"
-#define S_PATH INPUT_DIR "/s.csv"
+#define SU_PATH INPUT_DIR "/su.csv"
 #define F_PATH INPUT_DIR "/f.csv"
 
 #define X_DIR OUTPUT_DIR
@@ -69,7 +69,7 @@ static double h[P_DIM][P_DIM];
 static double invh[P_DIM][P_DIM];
 static double w[C_DIM];
 static double g[C_DIM][P_DIM];
-static double s[C_DIM][N_DIM];
+static double su[C_DIM][N_DIM];
 static double f[P_DIM][N_DIM];
 
 static double ft[N_DIM][P_DIM];
@@ -117,7 +117,7 @@ int main() {
         printf("Error while parsing input matrix g.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(S_PATH, C_DIM, N_DIM, s)) { 
+    if (parse_matrix_csv(SU_PATH, C_DIM, N_DIM, su)) { 
         printf("Error while parsing input matrix s.\n"); 
         return 1; 
     }
@@ -134,7 +134,6 @@ int main() {
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
 	/* Setup qpOASES. */
-    memset(qpoases_g, 0, sizeof(real_t)*P_DIM);
 	real_t obj;
 	int nWSR;
 	int status;
@@ -156,8 +155,9 @@ int main() {
         for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
             timing_reset();
 
-            // Update upper constraints
-            matrix_vector_product(C_DIM, N_DIM, s, x[j], qpoases_ubA);
+            // Update weight and upper constraints
+            matrix_vector_product(P_DIM, N_DIM, f, x[j], qpoases_g);
+            matrix_vector_product(C_DIM, N_DIM, su, x[j], qpoases_ubA);
             vector_sum(C_DIM, qpoases_ubA, w, qpoases_ubA);
 
             nWSR = C_DIM+1; // TODO
@@ -186,10 +186,9 @@ int main() {
             // printf( "\nxOpt = [ %e, %e ];  yOpt = [ %e, %e, %e ];  objVal = %e\n\n", 
             // 		xOpt[0],xOpt[1],yOpt[0],yOpt[1],yOpt[2], obj );
 
-
             /* Solve problem */
             for (uint16_t k = 0; k < M_DIM; ++k) {
-                u[j][k] = (double)xOpt[k] - inner_product(N_DIM, invh_f[k], x[j]);
+                u[j][k] = xOpt[k];
             }
 
             // Apply input
