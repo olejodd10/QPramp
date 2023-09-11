@@ -80,7 +80,7 @@ static real_t qpoases_A[C_DIM*P_DIM];
 static real_t qpoases_g[P_DIM];
 static real_t qpoases_ubA[C_DIM];
 static real_t xOpt[P_DIM];
-static real_t yOpt[C_DIM];
+static real_t yOpt[P_DIM+C_DIM];
 
 static double x[SIMULATION_TIMESTEPS+1][N_DIM];
 static double u[SIMULATION_TIMESTEPS][M_DIM];
@@ -141,14 +141,14 @@ int main() {
     int initialized = 0; // Whether hot start can be used or not
 
 	qpOASES_Options options;
-	qpOASES_Options_init( &options,0 ); // 0 for default, 1 for reliable and 2 for MPC
+	qpOASES_Options_init( &options,2 ); // 0 for default, 1 for reliable and 2 for MPC
 	options.printLevel = PL_NONE;
 
 	QProblem_setup(	P_DIM,C_DIM,HST_POSDEF); // TODO
 
     // Simulation
     double total_time = 0.0;
-    for (uint16_t i = 0; i < TEST_CASES; ++i) { // TODO
+    for (uint16_t i = 0; i < TEST_CASES; ++i) { 
         // Initial state
         memcpy(x[0], x0[i], sizeof(double)*N_DIM);
 
@@ -163,21 +163,21 @@ int main() {
             nWSR = C_DIM+1; // TODO
             if (initialized) {
                 int ret = QProblem_hotstart(	qpoases_g,NULL,NULL,NULL,qpoases_ubA,
-                        (int_t* const)&nWSR,0,
+                        (int_t* const)&nWSR,NULL,
                         xOpt,yOpt,&obj,(int_t* const)&status
                         );
-                if (status == 0) {
-                    printf("Case %d timestep %d er vellykket\n", i, j);
-                }
+                // if (status == 0) {
+                //     printf("Case %d timestep %d er vellykket\n", i, j);
+                // }
                 // printf("Hot start ret val and status: %d %d\n", ret, status);
             } else {
                 int ret = QProblem_init(	qpoases_H,qpoases_g,qpoases_A,NULL,NULL,NULL,qpoases_ubA,
-                        (int_t* const)&nWSR,0,&options,
+                        (int_t* const)&nWSR,NULL,&options,
                         xOpt,yOpt,&obj,(int_t* const)&status
                         );
-                if (status == 0) {
-                    printf("Case %d timestep %d er vellykket\n", i, j);
-                }
+                // if (status == 0) {
+                //     printf("Case %d timestep %d er vellykket\n", i, j);
+                // }
                 // printf("Init ret val and status: %d %d\n", ret, status);
                 initialized = 1;
             }
@@ -188,9 +188,8 @@ int main() {
 
 
             /* Solve problem */
-            double *z = xOpt;
             for (uint16_t k = 0; k < M_DIM; ++k) {
-                u[j][k] = (double)z[k] - inner_product(N_DIM, invh_f[k], x[j]);
+                u[j][k] = (double)xOpt[k] - inner_product(N_DIM, invh_f[k], x[j]);
             }
 
             // Apply input
