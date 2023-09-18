@@ -184,8 +184,10 @@ int main() {
     settings = (OSQPSettings *)malloc(sizeof(OSQPSettings));
     if (settings) {
         osqp_set_default_settings(settings);
-        settings->alpha = 1.0; /* Change alpha parameter */
         settings->verbose = 0;
+        settings->check_termination = 2;
+        settings->warm_start = 1;
+        settings->polish = 0;
     }
 
     /* Setup workspace */
