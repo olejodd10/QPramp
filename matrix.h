@@ -33,6 +33,6 @@ void matrix_sum(size_t m, size_t n, const double m1[m][n], const double m2[m][n]
 // Slow!
 void transpose(size_t m, size_t n, const double mat[m][n], double res[n][m]);
 
-uint8_t matrix_eq(size_t m, size_t n, const double m1[m][n], const double m2[m][n]);
+uint8_t matrix_eq(size_t m, size_t n, const double m1[m][n], const double m2[m][n], double eps);
 
 #endif

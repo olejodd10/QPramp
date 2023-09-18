@@ -174,7 +174,7 @@ int main() {
         if (parse_matrix_csv(path, SIMULATION_TIMESTEPS+1, N_DIM, x_ref)) {
             printf("Error while parsing reference matrix x_ref.\n"); 
         }
-        if (!matrix_eq(SIMULATION_TIMESTEPS+1, N_DIM, x, x_ref)) {
+        if (!matrix_eq(SIMULATION_TIMESTEPS+1, N_DIM, x, x_ref, EPS)) {
             printf("WARNING: Verification failed for x in test case %d\n", i);
         }
         fclose(f);
@@ -184,7 +184,7 @@ int main() {
         if (parse_matrix_csv(path, SIMULATION_TIMESTEPS, M_DIM, u_ref)) {
             printf("Error while parsing reference matrix u_ref.\n"); 
         }
-        if (!matrix_eq(SIMULATION_TIMESTEPS, M_DIM, u, u_ref)) {
+        if (!matrix_eq(SIMULATION_TIMESTEPS, M_DIM, u, u_ref, EPS)) {
             printf("WARNING: Verification failed for u in test case %d\n", i);
         }
         fclose(f);
