@@ -82,8 +82,7 @@ static void algorithm1(size_t c, double invq[c][c], iterable_set_t* a_set, const
             }
         }
         // Update y
-        scale_vector(c, v, y[index], v);
-        vector_sum(c, y, v, y);
+        add_scaled_vector(c, y, v, y[index], y);
     }
 }
 
