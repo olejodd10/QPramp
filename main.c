@@ -98,35 +98,35 @@ static iterable_set_t a_set = {
 int main() {
     timing_print_precision();
     timing_reset();
-    if (parse_matrix_csv(A_PATH, N_DIM, N_DIM, a)) { 
+    if (csv_parse_matrix(A_PATH, N_DIM, N_DIM, a)) { 
         printf("Error while parsing input matrix a.\n"); 
         return 1;
     }
-    if (parse_matrix_csv(B_PATH, N_DIM, M_DIM, b)) { 
+    if (csv_parse_matrix(B_PATH, N_DIM, M_DIM, b)) { 
         printf("Error while parsing input matrix b.\n"); 
         return 1;
     }
-    if (parse_matrix_csv(X0_PATH, TEST_CASES, N_DIM, x0)) { 
+    if (csv_parse_matrix(X0_PATH, TEST_CASES, N_DIM, x0)) { 
         printf("Error while parsing input matrix x0.\n"); 
         return 1;
     }
-    if (parse_matrix_csv(INVH_PATH, P_DIM, P_DIM, invh)) { 
+    if (csv_parse_matrix(INVH_PATH, P_DIM, P_DIM, invh)) { 
         printf("Error while parsing input matrix invh.\n"); 
         return 1; 
     }
-    if (parse_vector_csv(W_PATH, C_DIM, w)) { 
+    if (csv_parse_vector(W_PATH, C_DIM, w)) { 
         printf("Error while parsing input vector w.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(G_PATH, C_DIM, P_DIM, g)) { 
+    if (csv_parse_matrix(G_PATH, C_DIM, P_DIM, g)) { 
         printf("Error while parsing input matrix g.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(S_PATH, C_DIM, N_DIM, s)) { 
+    if (csv_parse_matrix(S_PATH, C_DIM, N_DIM, s)) { 
         printf("Error while parsing input matrix s.\n"); 
         return 1; 
     }
-    if (parse_matrix_csv(F_PATH, P_DIM, N_DIM, f)) { 
+    if (csv_parse_matrix(F_PATH, P_DIM, N_DIM, f)) { 
         printf("Error while parsing input matrix f.\n"); 
         return 1; 
     }
@@ -171,7 +171,7 @@ int main() {
         // Verify test case results
         sprintf(path, X_REF_DIR "/xout%d.csv", i);
         FILE* f = fopen(path, "r");
-        if (parse_matrix_csv(path, SIMULATION_TIMESTEPS+1, N_DIM, x_ref)) {
+        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS+1, N_DIM, x_ref)) {
             printf("Error while parsing reference matrix x_ref.\n"); 
         }
         if (!matrix_eq(SIMULATION_TIMESTEPS+1, N_DIM, x, x_ref, EPS)) {
@@ -181,7 +181,7 @@ int main() {
 
         sprintf(path, U_REF_DIR "/uout%d.csv", i);
         f = fopen(path, "r");
-        if (parse_matrix_csv(path, SIMULATION_TIMESTEPS, M_DIM, u_ref)) {
+        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS, M_DIM, u_ref)) {
             printf("Error while parsing reference matrix u_ref.\n"); 
         }
         if (!matrix_eq(SIMULATION_TIMESTEPS, M_DIM, u, u_ref, EPS)) {
@@ -192,15 +192,15 @@ int main() {
 
         // Save test case results
         sprintf(path, X_DIR "/xout%d.csv", i);
-        if (save_matrix_csv(path, SIMULATION_TIMESTEPS+1, N_DIM, x) < 0) {
+        if (csv_save_matrix(path, SIMULATION_TIMESTEPS+1, N_DIM, x) < 0) {
             printf("Error while saving x.\n");
         }
         sprintf(path, U_DIR "/uout%d.csv", i);
-        if (save_matrix_csv(path, SIMULATION_TIMESTEPS, M_DIM, u) < 0) {
+        if (csv_save_matrix(path, SIMULATION_TIMESTEPS, M_DIM, u) < 0) {
             printf("Error while saving u.\n");
         }
         sprintf(path, T_DIR "/tout%d.csv", i);
-        if (save_vector_csv(path, SIMULATION_TIMESTEPS, t) < 0) {
+        if (csv_save_vector(path, SIMULATION_TIMESTEPS, t) < 0) {
             printf("Error while saving t.\n");
         }
     }
