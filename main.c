@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "algs.h"
 #include "iterable_set.h"
@@ -10,31 +11,9 @@
 #include "lti.h"
 #include "timing.h"
 
-#ifndef TEST_CASES
-#error "TEST_CASES not set"
-#endif
-
 #ifndef SIMULATION_TIMESTEPS
 #error "SIMULATION_TIMESTEPS not set"
 #endif
-
-#ifndef N_DIM
-#error "N_DIM not set"
-#endif
-
-#ifndef M_DIM
-#error "M_DIM not set"
-#endif
-
-#ifndef HORIZON
-#error "HORIZON not set"
-#endif
-
-#ifndef C_DIM
-#error "C_DIM not set"
-#endif
-
-#define P_DIM HORIZON*M_DIM
 
 #ifndef INPUT_DIR
 #error "INPUT_DIR not set"
@@ -56,77 +35,90 @@
 #ifdef REFERENCE_DIR
 #define X_REF_DIR REFERENCE_DIR
 #define U_REF_DIR REFERENCE_DIR
-static double x_ref[SIMULATION_TIMESTEPS+1][N_DIM];
-static double u_ref[SIMULATION_TIMESTEPS][M_DIM];
 #endif
-
-static double a[N_DIM][N_DIM];
-static double b[N_DIM][M_DIM];
-static double x0[TEST_CASES][N_DIM];
-static double invh[P_DIM][P_DIM];
-static double w[C_DIM];
-static double g[C_DIM][P_DIM];
-static double s[C_DIM][N_DIM];
-static double f[P_DIM][N_DIM];
-
-static double ft[N_DIM][P_DIM];
-static double neg_w[C_DIM];
-static double neg_s[C_DIM][N_DIM];
-static double neg_invh[P_DIM][P_DIM]; // Only used once for initial setup
-static double neg_invh_f[M_DIM][N_DIM]; // Actually P_DIM x N_DIM, but we only need the M_DIM first rows
-static double neg_invh_gt[P_DIM][C_DIM];
-static double neg_g_invh[C_DIM][P_DIM];
-static double neg_g_invh_gt[C_DIM][C_DIM];
-    
-static double y[C_DIM];
-static double v[C_DIM];
-static double invq[C_DIM][C_DIM];
-static double x[SIMULATION_TIMESTEPS+1][N_DIM];
-static double u[SIMULATION_TIMESTEPS][M_DIM];
-static double t[SIMULATION_TIMESTEPS];
-
-static uint8_t setarr1[C_DIM]; 
-static ssize_t setarr2[C_DIM]; 
-static ssize_t setarr3[C_DIM]; 
-static iterable_set_t a_set = {
-    .capacity = C_DIM,
-    .elements = setarr1,
-    .next = setarr2,
-    .prev = setarr3,
-};
 
 int main() {
     timing_print_precision();
     timing_reset();
-    if (csv_parse_matrix(A_PATH, N_DIM, N_DIM, a)) { 
+	size_t initial_conditions = csv_parse_matrix_height(X0_PATH);
+	size_t n_dim = csv_parse_matrix_width(A_PATH);
+	size_t m_dim = csv_parse_matrix_width(B_PATH);
+	size_t c_dim = csv_parse_matrix_height(G_PATH);
+	size_t p_dim  = csv_parse_matrix_width(G_PATH);
+    printf("Input dimension parsing time: %ld us\n", timing_elapsed()/1000);
+
+    timing_reset();
+    double *a = (double*)malloc(n_dim*n_dim*sizeof(double));
+    double *b = (double*)malloc(n_dim*m_dim*sizeof(double));
+    double *x0 = (double*)malloc(initial_conditions*n_dim*sizeof(double));
+    double *invh = (double*)malloc(p_dim*p_dim*sizeof(double));
+	double *w = (double*)malloc(c_dim*sizeof(double));
+    double *g = (double*)malloc(c_dim*p_dim*sizeof(double));
+    double *s = (double*)malloc(c_dim*n_dim*sizeof(double));
+    double *f = (double*)malloc(p_dim*n_dim*sizeof(double));
+
+    double *ft = (double*)malloc(n_dim*p_dim*sizeof(double));
+	double *neg_w = (double*)malloc(c_dim*sizeof(double));
+    double *neg_s = (double*)malloc(c_dim*n_dim*sizeof(double));
+    double *neg_invh = (double*)malloc(p_dim*p_dim*sizeof(double)); // Only used once for initial setup
+    double *neg_invh_f = (double*)malloc(m_dim*n_dim*sizeof(double)); // Actually p_dim x n_dim, but we only need the m_dim first rows
+    double *neg_invh_gt = (double*)malloc(p_dim*c_dim*sizeof(double));
+    double *neg_g_invh = (double*)malloc(c_dim*p_dim*sizeof(double));
+    double *neg_g_invh_gt = (double*)malloc(c_dim*c_dim*sizeof(double));
+        
+	double *y = (double*)malloc(c_dim*sizeof(double));
+	double *v = (double*)malloc(c_dim*sizeof(double));
+    double *invq = (double*)malloc(c_dim*c_dim*sizeof(double));
+    double *x = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
+    double *u = (double*)malloc(SIMULATION_TIMESTEPS*m_dim*sizeof(double));
+	double *t = (double*)malloc(SIMULATION_TIMESTEPS*sizeof(double));
+
+	uint8_t *setarr1 = (uint8_t*)malloc(c_dim*sizeof(uint8_t)); 
+	ssize_t *setarr2 = (ssize_t*)malloc(c_dim*sizeof(ssize_t)); 
+	ssize_t *setarr3 = (ssize_t*)malloc(c_dim*sizeof(ssize_t)); 
+    iterable_set_t a_set = {
+        .capacity = c_dim,
+        .elements = setarr1,
+        .next = setarr2,
+        .prev = setarr3,
+    };
+
+#ifdef REFERENCE_DIR
+    double *x_ref = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
+    double *u_ref = (double*)malloc(SIMULATION_TIMESTEPS*m_dim*sizeof(double));
+#endif
+    printf("Allocation time: %ld us\n", timing_elapsed()/1000);
+
+    timing_reset();
+    if (csv_parse_matrix(A_PATH, n_dim, n_dim, a)) { 
         printf("Error while parsing input matrix a.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(B_PATH, N_DIM, M_DIM, b)) { 
+    if (csv_parse_matrix(B_PATH, n_dim, m_dim, b)) { 
         printf("Error while parsing input matrix b.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(X0_PATH, TEST_CASES, N_DIM, x0)) { 
+    if (csv_parse_matrix(X0_PATH, initial_conditions, n_dim, x0)) { 
         printf("Error while parsing input matrix x0.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(INVH_PATH, P_DIM, P_DIM, invh)) { 
+    if (csv_parse_matrix(INVH_PATH, p_dim, p_dim, invh)) { 
         printf("Error while parsing input matrix invh.\n"); 
         return 1; 
     }
-    if (csv_parse_vector(W_PATH, C_DIM, w)) { 
+    if (csv_parse_vector(W_PATH, c_dim, w)) { 
         printf("Error while parsing input vector w.\n"); 
         return 1; 
     }
-    if (csv_parse_matrix(G_PATH, C_DIM, P_DIM, g)) { 
+    if (csv_parse_matrix(G_PATH, c_dim, p_dim, g)) { 
         printf("Error while parsing input matrix g.\n"); 
         return 1; 
     }
-    if (csv_parse_matrix(S_PATH, C_DIM, N_DIM, s)) { 
+    if (csv_parse_matrix(S_PATH, c_dim, n_dim, s)) { 
         printf("Error while parsing input matrix s.\n"); 
         return 1; 
     }
-    if (csv_parse_matrix(F_PATH, P_DIM, N_DIM, f)) { 
+    if (csv_parse_matrix(F_PATH, p_dim, n_dim, f)) { 
         printf("Error while parsing input matrix f.\n"); 
         return 1; 
     }
@@ -134,29 +126,29 @@ int main() {
 
     // Other initialization
     timing_reset();
-    negate_vector(C_DIM, w, neg_w);
-    negate_matrix(C_DIM, N_DIM, s, neg_s);
-    transpose(P_DIM, N_DIM, f, ft);
-    negate_matrix(P_DIM, P_DIM, invh, neg_invh);
-    matrix_product(M_DIM, P_DIM, N_DIM, neg_invh, ft, neg_invh_f);
-    matrix_product(P_DIM, P_DIM, C_DIM, neg_invh, g, neg_invh_gt);
-    matrix_product(C_DIM, P_DIM, P_DIM, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
-    matrix_product(C_DIM, P_DIM, C_DIM, g, neg_g_invh, neg_g_invh_gt);
-    matrix_product(C_DIM, P_DIM, M_DIM, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
+    negate_vector(c_dim, w, neg_w);
+    negate_matrix(c_dim, n_dim, s, neg_s);
+    transpose(p_dim, n_dim, f, ft);
+    negate_matrix(p_dim, p_dim, invh, neg_invh);
+    matrix_product(m_dim, p_dim, n_dim, neg_invh, ft, neg_invh_f);
+    matrix_product(p_dim, p_dim, c_dim, neg_invh, g, neg_invh_gt);
+    matrix_product(c_dim, p_dim, p_dim, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
+    matrix_product(c_dim, p_dim, c_dim, g, neg_g_invh, neg_g_invh_gt);
+    matrix_product(c_dim, p_dim, m_dim, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
     set_init(&a_set);
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
     double total_time = 0.0;
-    for (uint16_t i = 0; i < TEST_CASES; ++i) {
+    for (uint16_t i = 0; i < initial_conditions; ++i) {
         // Initial state
-        memcpy(x[0], x0[i], sizeof(double)*N_DIM);
+        memcpy(&x[0], &x0[i*n_dim], sizeof(double)*n_dim);
 
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
             timing_reset();
-            algorithm2(C_DIM, N_DIM, M_DIM, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x[j], invq, &a_set, y, v, u[j]);
-            simulate(N_DIM, M_DIM, a, x[j], b, u[j], x[j+1]); 
+            algorithm2(c_dim, n_dim, m_dim, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, &x[j*n_dim], invq, &a_set, y, v, &u[j*m_dim]);
+            simulate(n_dim, m_dim, a, &x[j*n_dim], b, &u[j*m_dim], &x[(j+1)*n_dim]); 
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
         }
@@ -164,27 +156,27 @@ int main() {
 
         // Test case result printing
         // printf("Total simulation time for %d iterations of test case %d: %.0f us\n", SIMULATION_TIMESTEPS, i, test_case_time/1000);
-        // print_vector(N_DIM, x[SIMULATION_TIMESTEPS]);
+        // print_vector(n_dim, x[SIMULATION_TIMESTEPS]);
 
         char path[80];
         #ifdef REFERENCE_DIR
         // Verify test case results
         sprintf(path, X_REF_DIR "/xout%d.csv", i);
         FILE* f = fopen(path, "r");
-        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS+1, N_DIM, x_ref)) {
+        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS+1, n_dim, x_ref)) {
             printf("Error while parsing reference matrix x_ref.\n"); 
         }
-        if (!matrix_eq(SIMULATION_TIMESTEPS+1, N_DIM, x, x_ref, EPS)) {
+        if (!matrix_eq(SIMULATION_TIMESTEPS+1, n_dim, x, x_ref, EPS)) {
             printf("WARNING: Verification failed for x in test case %d\n", i);
         }
         fclose(f);
 
         sprintf(path, U_REF_DIR "/uout%d.csv", i);
         f = fopen(path, "r");
-        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS, M_DIM, u_ref)) {
+        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS, m_dim, u_ref)) {
             printf("Error while parsing reference matrix u_ref.\n"); 
         }
-        if (!matrix_eq(SIMULATION_TIMESTEPS, M_DIM, u, u_ref, EPS)) {
+        if (!matrix_eq(SIMULATION_TIMESTEPS, m_dim, u, u_ref, EPS)) {
             printf("WARNING: Verification failed for u in test case %d\n", i);
         }
         fclose(f);
@@ -192,11 +184,11 @@ int main() {
 
         // Save test case results
         sprintf(path, X_DIR "/xout%d.csv", i);
-        if (csv_save_matrix(path, SIMULATION_TIMESTEPS+1, N_DIM, x) < 0) {
+        if (csv_save_matrix(path, SIMULATION_TIMESTEPS+1, n_dim, x) < 0) {
             printf("Error while saving x.\n");
         }
         sprintf(path, U_DIR "/uout%d.csv", i);
-        if (csv_save_matrix(path, SIMULATION_TIMESTEPS, M_DIM, u) < 0) {
+        if (csv_save_matrix(path, SIMULATION_TIMESTEPS, m_dim, u) < 0) {
             printf("Error while saving u.\n");
         }
         sprintf(path, T_DIR "/tout%d.csv", i);
@@ -206,7 +198,7 @@ int main() {
     }
 
     // Summary
-    printf("Average time per test case running %d timesteps: %.0f us\n", SIMULATION_TIMESTEPS, total_time/1000/TEST_CASES);
+    printf("Average time per test case running %d timesteps: %.0f us\n", SIMULATION_TIMESTEPS, total_time/1000/initial_conditions);
 
     return 0;
 }

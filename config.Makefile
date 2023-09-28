@@ -1,26 +1,7 @@
-TEST_CASES := 100
 SIMULATION_TIMESTEPS := 100
 EPS := 2.2204e-15
 
-EXAMPLE := 3
-ifeq ($(EXAMPLE), 1)
-    N_DIM := 2
-    M_DIM := 1
-    HORIZON := 10
-    C_DIM := 66
-else ifeq ($(EXAMPLE), 2)
-    N_DIM := 4
-    M_DIM := 2
-    HORIZON := 30
-    C_DIM := 316
-else ifeq ($(EXAMPLE), 3)
-    N_DIM := 25
-    M_DIM := 4
-    HORIZON := 30
-    C_DIM := 1560
-endif
-
-INPUT_DIR_RAW := ../examples/example$(EXAMPLE)
+INPUT_DIR_RAW := ../examples/example3
 INPUT_DIR := \"$(INPUT_DIR_RAW)\"
 OUTPUT_DIR := \"$(INPUT_DIR_RAW)/out\"
 REFERENCE_DIR := \"$(INPUT_DIR_RAW)/reference\"
