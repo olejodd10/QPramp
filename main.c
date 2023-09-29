@@ -10,21 +10,23 @@
 #include "csv.h"
 #include "lti.h"
 #include "timing.h"
+#include "qpOASES_wrapper.h"
 
 #define SIMULATION_TIMESTEPS 100
 
-#define INPUT_DIR "../examples/example3"
+#define INPUT_DIR "../examples/osqp/n20"
 #define OUTPUT_DIR INPUT_DIR "/out"
 #define REFERENCE_DIR INPUT_DIR "/reference"
 
 #define A_PATH INPUT_DIR "/a.csv"
 #define B_PATH INPUT_DIR "/b.csv"
 #define X0_PATH INPUT_DIR "/x0.csv"
-#define INVH_PATH INPUT_DIR "/invh.csv"
-#define W_PATH INPUT_DIR "/w.csv"
-#define G_PATH INPUT_DIR "/g.csv"
-#define S_PATH INPUT_DIR "/s.csv"
-#define F_PATH INPUT_DIR "/f.csv"
+
+#define QPOASES_H_PATH INPUT_DIR "/osqp_p.csv"
+#define QPOASES_G_PATH INPUT_DIR "/osqp_q.csv"
+#define QPOASES_LBA_PATH INPUT_DIR "/osqp_l.csv"
+#define QPOASES_A_PATH INPUT_DIR "/osqp_a.csv"
+#define QPOASES_UBA_PATH INPUT_DIR "/osqp_u.csv"
 
 #define X_DIR OUTPUT_DIR
 #define U_DIR OUTPUT_DIR
@@ -42,45 +44,27 @@ int main() {
 	size_t initial_conditions = csv_parse_matrix_height(X0_PATH);
 	size_t n_dim = csv_parse_matrix_width(A_PATH);
 	size_t m_dim = csv_parse_matrix_width(B_PATH);
-	size_t c_dim = csv_parse_matrix_height(G_PATH);
-	size_t p_dim  = csv_parse_matrix_width(G_PATH);
+	size_t c_dim = csv_parse_matrix_height(QPOASES_A_PATH);
+	size_t p_dim  = csv_parse_matrix_width(QPOASES_A_PATH);
+    size_t horizon = (p_dim - n_dim)/(n_dim + m_dim);
     printf("Input dimension parsing time: %ld us\n", timing_elapsed()/1000);
 
     timing_reset();
     double *a = (double*)malloc(n_dim*n_dim*sizeof(double));
     double *b = (double*)malloc(n_dim*m_dim*sizeof(double));
     double *x0 = (double*)malloc(initial_conditions*n_dim*sizeof(double));
-    double *invh = (double*)malloc(p_dim*p_dim*sizeof(double));
-	double *w = (double*)malloc(c_dim*sizeof(double));
-    double *g = (double*)malloc(c_dim*p_dim*sizeof(double));
-    double *s = (double*)malloc(c_dim*n_dim*sizeof(double));
-    double *f = (double*)malloc(p_dim*n_dim*sizeof(double));
 
-    double *ft = (double*)malloc(n_dim*p_dim*sizeof(double));
-	double *neg_w = (double*)malloc(c_dim*sizeof(double));
-    double *neg_s = (double*)malloc(c_dim*n_dim*sizeof(double));
-    double *neg_invh = (double*)malloc(p_dim*p_dim*sizeof(double)); // Only used once for initial setup
-    double *neg_invh_f = (double*)malloc(m_dim*n_dim*sizeof(double)); // Actually p_dim x n_dim, but we only need the m_dim first rows
-    double *neg_invh_gt = (double*)malloc(p_dim*c_dim*sizeof(double));
-    double *neg_g_invh = (double*)malloc(c_dim*p_dim*sizeof(double));
-    double *neg_g_invh_gt = (double*)malloc(c_dim*c_dim*sizeof(double));
-        
-	double *y = (double*)malloc(c_dim*sizeof(double));
-	double *v = (double*)malloc(c_dim*sizeof(double));
-    double *invq = (double*)malloc(c_dim*c_dim*sizeof(double));
+    real_t *qpoases_h = (real_t*)malloc(p_dim*p_dim*sizeof(real_t));
+    real_t *qpoases_a = (real_t*)malloc(c_dim*p_dim*sizeof(real_t));
+    real_t *qpoases_g = (real_t*)malloc(p_dim*sizeof(real_t));
+    real_t *qpoases_lba = (real_t*)malloc(c_dim*sizeof(real_t));
+    real_t *qpoases_uba = (real_t*)malloc(c_dim*sizeof(real_t));
+    real_t *xOpt = (real_t*)malloc(p_dim*sizeof(real_t));
+    real_t *yOpt = (real_t*)malloc((c_dim+p_dim)*sizeof(real_t));
+
     double *x = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
     double *u = (double*)malloc(SIMULATION_TIMESTEPS*m_dim*sizeof(double));
 	double *t = (double*)malloc(SIMULATION_TIMESTEPS*sizeof(double));
-
-	uint8_t *setarr1 = (uint8_t*)malloc(c_dim*sizeof(uint8_t)); 
-	size_t *setarr2 = (size_t*)malloc(c_dim*sizeof(size_t)); 
-	size_t *setarr3 = (size_t*)malloc(c_dim*sizeof(size_t)); 
-    iterable_set_t a_set = {
-        .capacity = c_dim,
-        .elements = setarr1,
-        .next = setarr2,
-        .prev = setarr3,
-    };
 
 #ifdef REFERENCE_DIR
     double *x_ref = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
@@ -101,55 +85,97 @@ int main() {
         printf("Error while parsing input matrix x0.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(INVH_PATH, p_dim, p_dim, invh)) { 
-        printf("Error while parsing input matrix invh.\n"); 
-        return 1; 
-    }
-    if (csv_parse_vector(W_PATH, c_dim, w)) { 
-        printf("Error while parsing input vector w.\n"); 
-        return 1; 
-    }
-    if (csv_parse_matrix(G_PATH, c_dim, p_dim, g)) { 
-        printf("Error while parsing input matrix g.\n"); 
-        return 1; 
-    }
-    if (csv_parse_matrix(S_PATH, c_dim, n_dim, s)) { 
-        printf("Error while parsing input matrix s.\n"); 
-        return 1; 
-    }
-    if (csv_parse_matrix(F_PATH, p_dim, n_dim, f)) { 
-        printf("Error while parsing input matrix f.\n"); 
-        return 1; 
-    }
+
+    if (csv_parse_matrix(QPOASES_H_PATH, p_dim, p_dim, qpoases_h)) { 
+		printf("Error while parsing input matrix qpoases_h.\n");
+		return 1;
+	}
+    if (csv_parse_matrix(QPOASES_A_PATH, c_dim, p_dim, qpoases_a)) { 
+		printf("Error while parsing input matrix qpoases_a.\n");
+		return 1;
+	}
+    if (csv_parse_vector(QPOASES_G_PATH, p_dim, qpoases_g)) { 
+		printf("Error while parsing input vector qpoases_g.\n");
+		return 1;
+	}
+    if (csv_parse_vector(QPOASES_LBA_PATH, c_dim, qpoases_lba)) { 
+		printf("Error while parsing input vector qpoases_lba.\n");
+		return 1;
+	}
+    if (csv_parse_vector(QPOASES_UBA_PATH, c_dim, qpoases_uba)) { 
+		printf("Error while parsing input vector qpoases_uba.\n");
+		return 1;
+	}
     printf("Input parsing time: %ld us\n", timing_elapsed()/1000);
 
-    // Other initialization
-    timing_reset();
-    negate_vector(c_dim, w, neg_w);
-    negate_matrix(c_dim, n_dim, s, neg_s);
-    transpose(p_dim, n_dim, f, ft);
-    negate_matrix(p_dim, p_dim, invh, neg_invh);
-    matrix_product(m_dim, p_dim, n_dim, neg_invh, ft, neg_invh_f);
-    matrix_product(p_dim, p_dim, c_dim, neg_invh, g, neg_invh_gt);
-    matrix_product(c_dim, p_dim, p_dim, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
-    matrix_product(c_dim, p_dim, c_dim, g, neg_g_invh, neg_g_invh_gt);
-    matrix_product(c_dim, p_dim, m_dim, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
-    set_init(&a_set);
-    printf("Initialization time: %ld us\n", timing_elapsed()/1000);
+	qpOASES_Options options;
+	qpOASES_Options_init( &options,2 ); // 0 for default, 1 for reliable and 2 for MPC
+	options.printLevel = PL_NONE;
+
+	QProblem_setup(	p_dim,c_dim,HST_POSDEF); // TODO
+
+    real_t obj;
+    int nWSR;
+    int status;
+    int initialized = 0; // Whether hot start can be used or not
 
     // Simulation
     double total_time = 0.0;
     for (uint16_t i = 0; i < initial_conditions; ++i) {
         // Initial state
         memcpy(&x[0], &x0[i*n_dim], sizeof(double)*n_dim);
+        // This is redundant when i == 0 if qpoases_lba and qpoasas_uba are given correctly
+        for (uint16_t k = 0; k < n_dim; ++k) {
+            qpoases_lba[k] = -x[k];
+            qpoases_uba[k] = -x[k];
+        }
 
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
             timing_reset();
-            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, &x[j*n_dim], invq, &a_set, y, v, &u[j*m_dim]);
-            simulate(n_dim, m_dim, a, &x[j*n_dim], b, &u[j*m_dim], &x[(j+1)*n_dim]); 
+
+            nWSR = c_dim+1; // TODO
+            if (initialized) {
+                int ret = QProblem_hotstart(	qpoases_g,NULL,NULL,qpoases_lba,qpoases_uba,
+                        (int_t* const)&nWSR,0,
+                        xOpt,yOpt,&obj,(int_t* const)&status
+                        );
+                // if (status == 0) {
+                //     printf("Case %d timestep %d er vellykket\n", i, j);
+                // }
+                // printf("Hot start ret val and status: %d %d\n", ret, status);
+            } else {
+                int ret = QProblem_init(	qpoases_h,qpoases_g,qpoases_a,NULL,NULL,qpoases_lba,qpoases_uba,
+                        (int_t* const)&nWSR,0,&options,
+                        xOpt,yOpt,&obj,(int_t* const)&status
+                        );
+                // if (status == 0) {
+                //     printf("Case %d timestep %d er vellykket\n", i, j);
+                // }
+                // printf("Init ret val and status: %d %d\n", ret, status);
+                initialized = 1;
+            }
+            
+            // /* Print solution of first QP. */	
+            // printf( "\nxOpt = [ %e, %e ];  yOpt = [ %e, %e, %e ];  objVal = %e\n\n", 
+            // 		xOpt[0],xOpt[1],yOpt[0],yOpt[1],yOpt[2], obj );
+
+
+            double *u_temp = (double*)(&xOpt[n_dim*(horizon+1)]);
+
+            // Apply input
+            simulate(n_dim, m_dim, a, &x[j*n_dim], b, u_temp, &x[(j+1)*n_dim]); 
+
+            // Update constraints
+            for (uint16_t k = 0; k < n_dim; ++k) {
+                qpoases_lba[k] = -x[(j+1)*n_dim + k];
+                qpoases_uba[k] = -x[(j+1)*n_dim + k];
+            }
+
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
+
+            memcpy(&u[j*m_dim], u_temp, m_dim*sizeof(double));
         }
         total_time += test_case_time;
 
@@ -195,6 +221,8 @@ int main() {
             printf("Error while saving t.\n");
         }
     }
+
+	QProblem_cleanup();
 
     // Summary
     printf("Average time per test case running %d timesteps: %.0f us\n", SIMULATION_TIMESTEPS, total_time/1000/initial_conditions);
