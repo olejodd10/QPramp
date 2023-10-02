@@ -1,7 +1,7 @@
 #include "csv.h"
 
-#ifndef WRITE_FORMAT
-#error "WRITE_FORMAT not set"
+#ifndef SAVE_FORMAT
+#error "SAVE_FORMAT not set"
 #endif
 
 static size_t parse_matrix_height(FILE* f) {
@@ -109,14 +109,14 @@ static ssize_t write_row(FILE* f, size_t n, const double vec[n]) {
     size_t sum = 0;
     int ret = 0;
     for (size_t i = 0; i < n-1; ++i) {
-        ret = fprintf(f, WRITE_FORMAT ",", vec[i]);
+        ret = fprintf(f, SAVE_FORMAT ",", vec[i]);
         if (ret < 0) {
             return ret;
         } else {
             sum += ret;
         }
     }
-    ret = fprintf(f, WRITE_FORMAT "\n", vec[n-1]);
+    ret = fprintf(f, SAVE_FORMAT "\n", vec[n-1]);
     if (ret < 0) {
         return ret;
     } else {
@@ -134,7 +134,7 @@ ssize_t csv_save_vector(const char* path, size_t n, const double vec[n]) {
     size_t sum = 0;
     int ret;
     for (size_t i = 0; i < n; ++i) {
-        ret = fprintf(f, WRITE_FORMAT "\n", vec[i]);
+        ret = fprintf(f, SAVE_FORMAT "\n", vec[i]);
         if (ret < 0) {
             return ret;
         } else {
