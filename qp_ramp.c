@@ -1,9 +1,18 @@
 #include "qp_ramp.h"
-#include "iterable_set.h"
 
 #ifndef EPS
 #error "EPS not set"
 #endif
+
+static uint8_t infeasiblity_warning_enabled = 0;
+static double infeasibility_warning_min;
+static double infeasibility_warning_max;
+
+void qp_ramp_enable_infeasibility_warning(double min, double max) {
+    infeasiblity_warning_enabled = 1;
+    infeasibility_warning_min = min;
+    infeasibility_warning_max = max;
+}
 
 static ssize_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
     double min = y[0];
@@ -63,7 +72,6 @@ static void algorithm1(size_t c, double invq[c][c], iterable_set_t* a_set, const
         } else {
             index = most_positive_index(c, a_set, y);
             if (index < 0) {
-                // printf("y and A are compatible\n");
                 break;
             }
             compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
@@ -71,8 +79,15 @@ static void algorithm1(size_t c, double invq[c][c], iterable_set_t* a_set, const
             q0 = -1.0;
         }
         
+        double qdiv = q0+v[index];
+        if (infeasiblity_warning_enabled && 
+            (fabs(qdiv) < infeasibility_warning_min || 
+             fabs(qdiv) > infeasibility_warning_max)) {
+            printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
+        }
+
         // Update invq
-        scale_vector(c, v, -1.0/(q0+v[index]), v);
+        scale_vector(c, v, -1.0/qdiv, v);
         for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
             if (i == index) { // Just inserted
                 memcpy(invq[i], v, c*sizeof(double));
