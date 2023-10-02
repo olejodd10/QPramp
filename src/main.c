@@ -48,6 +48,8 @@ int main(int argc, char *argv[]) {
     double *neg_g_invh = (double*)malloc(c_dim*p_dim*sizeof(double));
     double *neg_g_invh_gt = (double*)malloc(c_dim*c_dim*sizeof(double));
         
+    double *z = (double*)malloc(p_dim*sizeof(double));
+
     double *x = (double*)malloc((simulation_timesteps+1)*n_dim*sizeof(double));
     double *u = (double*)malloc(simulation_timesteps*m_dim*sizeof(double));
 	double *t = (double*)malloc(simulation_timesteps*sizeof(double));
@@ -110,7 +112,6 @@ int main(int argc, char *argv[]) {
     matrix_product(m_dim, p_dim, n_dim, (double(*)[])neg_invh, (double(*)[])ft, (double(*)[])neg_invh_f);
     matrix_product(c_dim, p_dim, p_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(c_dim, p_dim, c_dim, (double(*)[])g, (double(*)[])neg_g_invh, (double(*)[])neg_g_invh_gt);
-    matrix_product(c_dim, p_dim, m_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Make sure memory layout is correct for later use
     // Free memory that's no longer needed
     free(invh);
 	free(w);
@@ -131,7 +132,10 @@ int main(int argc, char *argv[]) {
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < simulation_timesteps; ++j) {
             timing_reset();
-            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, &x[j*n_dim], &u[j*m_dim]);
+            qp_ramp_solve(c_dim, n_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_g_invh, &x[j*n_dim], z);
+            for (uint16_t k = 0; k < m_dim; ++k) {
+                u[j*m_dim+k] = z[k] + inner_product(n_dim, &neg_invh_f[k*n_dim], &x[j*n_dim]);
+            }
             simulate(n_dim, m_dim, (double(*)[])a, &x[j*n_dim], (double(*)[])b, &u[j*m_dim], &x[(j+1)*n_dim]); 
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
