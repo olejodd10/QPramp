@@ -4,6 +4,7 @@ void set_init(iterable_set_t* set) {
     memset(set->elements, 0, set->capacity);
     set->first = -1;
     set->last = -1;
+    set->size = 0;
 }
 
 void set_clear(iterable_set_t* set) {
@@ -12,6 +13,7 @@ void set_clear(iterable_set_t* set) {
     }
     set->first = -1;
     set->last = -1;
+    set->size = 0;
 }
 
 void set_insert(iterable_set_t* set, size_t element) {
@@ -25,6 +27,7 @@ void set_insert(iterable_set_t* set, size_t element) {
     }
     set->next[element] = -1;
     set->last = element;
+    set->size++;
 }
 
 void set_remove(iterable_set_t* set, size_t element) {
@@ -44,6 +47,11 @@ void set_remove(iterable_set_t* set, size_t element) {
         set->next[set->prev[element]] = set->next[element];
         set->prev[set->next[element]] = set->prev[element];
     }
+    set->size--;
+}
+
+size_t set_size(const iterable_set_t* set) {
+    return set->size;
 }
 
 uint8_t set_contains(const iterable_set_t* set, size_t element) {

@@ -58,44 +58,80 @@ static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a
     }
 }
 
+static ssize_t rank_2_update_removal_index(size_t c, size_t i, const double invq[c][c], const iterable_set_t* a_set, const double neg_g_invh_gt[c][c], const double y[c]) {
+    double max = 0.0; // Overwritten immediately
+    ssize_t index = -1;
+    for (ssize_t j = set_first(a_set); j != -1; j = set_next(a_set, j)) {
+        double divisor = 0.0;
+        for (ssize_t k = set_first(a_set); k != -1; k = set_next(a_set, k)) {
+            // Note that since j is in a_set, we only have to consider "active columns" of invq
+            // Also note that the order of indices for neg_g_invh_gt doesn't matter since it's symmetric
+            if (k == i) {
+                divisor += invq[j][k] * (neg_g_invh_gt[i][k] + 1.0);
+            } else {
+                divisor += invq[j][k] * neg_g_invh_gt[i][k];
+            }
+        }
+        if ((divisor < -QP_RAMP_EPS) && (y[j]/divisor > max || index == -1)) {
+            max = y[j]/divisor;
+            index = j;
+        }
+    }
+    return index;
+}
+
+// Note that v is also changed
+static void update_y_and_invq(size_t c, size_t index, double q0, const iterable_set_t* a_set, double v[c], double y[c], double invq[c][c]) {
+    double qdiv = q0+v[index];
+    if (infeasiblity_warning_enabled && 
+        (fabs(qdiv) < infeasibility_warning_min || 
+         fabs(qdiv) > infeasibility_warning_max)) {
+        printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
+    }
+    // Update invq
+    scale_vector(c, v, -1.0/qdiv, v);
+    for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
+        if (i == index) { // Just inserted
+            memcpy(invq[i], v, c*sizeof(double));
+            invq[i][i] += 1.0; // Pretend there was a unit vector in the column to start with
+        } else {
+            add_scaled_vector(c, invq[i], v, invq[i][index], invq[i]);
+        }
+    }
+    // Update y
+    add_scaled_vector(c, y, v, y[index], y);
+}
+
 // Terminal results are written to and available from a_set, invq and y
 // v can be anything - call it temp?
-static void algorithm1(size_t c, double invq[c][c], iterable_set_t* a_set, const double neg_g_invh_gt[c][c], double v[c], double y[c]) {
+static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_set, const double neg_g_invh_gt[c][c], double v[c], double y[c]) {
     while (1) {
-        double q0 = 1.0;
         ssize_t index = most_negative_index(c, a_set, y);
         if (index >= 0) {
             compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
             set_remove(a_set, index);
+            update_y_and_invq(c, index, 1.0, a_set, v, y, invq);
         } else {
             index = most_positive_index(c, a_set, y);
             if (index < 0) {
                 break;
             }
+
+            if (set_size(a_set) == p) {
+                ssize_t index2 = rank_2_update_removal_index(c, index, invq, a_set, neg_g_invh_gt, y);
+                if (index2 == -1) {
+                    printf("WARNING: Unable to perform rank two update.\n");
+                } else {
+                    compute_v(c, invq, a_set, index2, neg_g_invh_gt, v);
+                    set_remove(a_set, index2);
+                    update_y_and_invq(c, index2, 1.0, a_set, v, y, invq);
+                }
+            }
+
             compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
             set_insert(a_set, index);
-            q0 = -1.0;
+            update_y_and_invq(c, index, -1.0, a_set, v, y, invq);
         }
-        
-        double qdiv = q0+v[index];
-        if (infeasiblity_warning_enabled && 
-            (fabs(qdiv) < infeasibility_warning_min || 
-             fabs(qdiv) > infeasibility_warning_max)) {
-            printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
-        }
-
-        // Update invq
-        scale_vector(c, v, -1.0/qdiv, v);
-        for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
-            if (i == index) { // Just inserted
-                memcpy(invq[i], v, c*sizeof(double));
-                invq[i][i] += 1.0; // Pretend there was a unit vector in the column to start with
-            } else {
-                add_scaled_vector(c, invq[i], v, invq[i][index], invq[i]);
-            }
-        }
-        // Update y
-        add_scaled_vector(c, y, v, y[index], y);
     }
 }
 
@@ -121,17 +157,17 @@ void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c
     set_clear(a_set);
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
-    algorithm1(c, invq, a_set, neg_g_invh_gt, v, y);
+    algorithm1(c, p, invq, a_set, neg_g_invh_gt, v, y);
     compute_z(c, p, neg_g_invh, y, z);
 }
 
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double invq[c][c], iterable_set_t* a_set, double y[c], double v[c], double u[m]) {
+void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double invq[c][c], iterable_set_t* a_set, double y[c], double v[c], double u[m]) {
     set_clear(a_set);
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
-    algorithm1(c, invq, a_set, neg_g_invh_gt, v, y);
+    algorithm1(c, p, invq, a_set, neg_g_invh_gt, v, y);
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
 }

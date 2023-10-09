@@ -146,7 +146,7 @@ int main() {
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
             timing_reset();
-            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, &x[j*n_dim], invq, &a_set, y, v, &u[j*m_dim]);
+            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, &x[j*n_dim], invq, &a_set, y, v, &u[j*m_dim]);
             simulate(n_dim, m_dim, a, &x[j*n_dim], b, &u[j*m_dim], &x[(j+1)*n_dim]); 
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];

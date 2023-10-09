@@ -8,6 +8,7 @@
 
 typedef struct {
     size_t capacity;
+    size_t size;
     uint8_t* elements;
     ssize_t* next;
     ssize_t* prev;
@@ -22,6 +23,8 @@ void set_clear(iterable_set_t* set);
 void set_insert(iterable_set_t* set, size_t element);
 
 void set_remove(iterable_set_t* set, size_t element);
+
+size_t set_size(const iterable_set_t* set);
 
 uint8_t set_contains(const iterable_set_t* set, size_t element);
 
