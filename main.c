@@ -11,13 +11,11 @@
 #include "lti.h"
 #include "timing.h"
 
-#ifndef SIMULATION_TIMESTEPS
-#error "SIMULATION_TIMESTEPS not set"
-#endif
+#define SIMULATION_TIMESTEPS 100
 
-#ifndef INPUT_DIR
-#error "INPUT_DIR not set"
-#endif
+#define INPUT_DIR "../examples/example3"
+#define OUTPUT_DIR INPUT_DIR "/out"
+#define REFERENCE_DIR INPUT_DIR "/reference"
 
 #define A_PATH INPUT_DIR "/a.csv"
 #define B_PATH INPUT_DIR "/b.csv"
@@ -35,6 +33,7 @@
 #ifdef REFERENCE_DIR
 #define X_REF_DIR REFERENCE_DIR
 #define U_REF_DIR REFERENCE_DIR
+#define EQ_EPS 1e-8
 #endif
 
 int main() {
@@ -166,7 +165,7 @@ int main() {
         if (csv_parse_matrix(path, SIMULATION_TIMESTEPS+1, n_dim, x_ref)) {
             printf("Error while parsing reference matrix x_ref.\n"); 
         }
-        if (!matrix_eq(SIMULATION_TIMESTEPS+1, n_dim, x, x_ref, EPS)) {
+        if (!matrix_eq(SIMULATION_TIMESTEPS+1, n_dim, x, x_ref, EQ_EPS)) {
             printf("WARNING: Verification failed for x in test case %d\n", i);
         }
         fclose(f);
@@ -176,7 +175,7 @@ int main() {
         if (csv_parse_matrix(path, SIMULATION_TIMESTEPS, m_dim, u_ref)) {
             printf("Error while parsing reference matrix u_ref.\n"); 
         }
-        if (!matrix_eq(SIMULATION_TIMESTEPS, m_dim, u, u_ref, EPS)) {
+        if (!matrix_eq(SIMULATION_TIMESTEPS, m_dim, u, u_ref, EQ_EPS)) {
             printf("WARNING: Verification failed for u in test case %d\n", i);
         }
         fclose(f);

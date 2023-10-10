@@ -1,8 +1,6 @@
 #include "qp_ramp.h"
 
-#ifndef EPS
-#error "EPS not set"
-#endif
+#define QP_RAMP_EPS 1e-8
 
 static uint8_t infeasiblity_warning_enabled = 0;
 static double infeasibility_warning_min;
@@ -23,7 +21,7 @@ static ssize_t most_negative_index(size_t c, const iterable_set_t* a_set, double
             index = i;
         }    
     }
-    if (!set_contains(a_set, index) || y[index] > -EPS) {
+    if (!set_contains(a_set, index) || y[index] > -QP_RAMP_EPS) {
         return -1;
     }
     return index;
@@ -38,7 +36,7 @@ static ssize_t most_positive_index(size_t c, const iterable_set_t* a_set, double
             index = i;
         }    
     }
-    if (set_contains(a_set, index) || y[index] < EPS) {
+    if (set_contains(a_set, index) || y[index] < QP_RAMP_EPS) {
         return -1;
     }
     return index;
@@ -104,7 +102,7 @@ static void algorithm1(size_t c, double invq[c][c], iterable_set_t* a_set, const
 static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
     matrix_vector_product(m, n, neg_invh_f, x, u);
     for (size_t i = 0; i < c; ++i) {
-        if (y[i] > EPS) {
+        if (y[i] > QP_RAMP_EPS) {
             add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
         }
     }
@@ -113,7 +111,7 @@ static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n
 static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const double y[c], double z[p]) {
     memset(z, 0, sizeof(double)*p);
     for (size_t i = 0; i < c; ++i) {
-        if (y[i] > EPS) {
+        if (y[i] > QP_RAMP_EPS) {
             add_scaled_vector(p, z, neg_g_invh[i], y[i], z);
         }
     }

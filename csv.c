@@ -1,8 +1,6 @@
 #include "csv.h"
 
-#ifndef SAVE_FORMAT
-#error "SAVE_FORMAT not set"
-#endif
+#define SAVE_FORMAT "%.4le"
 
 static size_t parse_matrix_height(FILE* f) {
     size_t count = 0;

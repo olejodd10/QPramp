@@ -1,18 +1,5 @@
-SIMULATION_TIMESTEPS := 100
-EPS := 2.2204e-8
-
-INPUT_DIR_RAW := ../examples/example3
-INPUT_DIR := \"$(INPUT_DIR_RAW)\"
-OUTPUT_DIR := \"$(INPUT_DIR_RAW)/out\"
-REFERENCE_DIR := \"$(INPUT_DIR_RAW)/reference\"
-
-SAVE_FORMAT := \"%.4le\"
-
-DEFINES := SIMULATION_TIMESTEPS EPS INPUT_DIR OUTPUT_DIR SAVE_FORMAT REFERENCE_DIR
-DEFINE_FLAGS := $(foreach val, $(DEFINES), -D$(val)=$($(val)))
-
 CC := gcc
-FLAGS := -Ofast $(DEFINE_FLAGS)
+FLAGS := -Ofast -g
 
 BUILD_DIR := build
 EXECUTABLE := main
