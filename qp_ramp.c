@@ -12,22 +12,21 @@ void qp_ramp_enable_infeasibility_warning(double min, double max) {
     infeasibility_warning_max = max;
 }
 
-static ssize_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
+// Returns c if none found
+static size_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
     double min = -QP_RAMP_EPS;
     size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
-    for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
+    for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (y[i] < min) {
             min = y[i];
             index = i;
         }    
     }
-    if (index == c) {
-        return -1;
-    }
     return index;
 }
 
-static ssize_t most_positive_index(size_t c, const iterable_set_t* a_set, double y[c]) {
+// Returns c if none found
+static size_t most_positive_index(size_t c, const iterable_set_t* a_set, double y[c]) {
     double max = QP_RAMP_EPS;
     size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
     for (size_t i = 0; i < c; ++i) {
@@ -35,9 +34,6 @@ static ssize_t most_positive_index(size_t c, const iterable_set_t* a_set, double
             max = y[i];
             index = i;
         }    
-    }
-    if (index == c) {
-        return -1;
     }
     return index;
 }
@@ -49,7 +45,7 @@ static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a
         v[i] = set_contains(a_set, i) ? 0.0 : (i == index ? neg_g_invh_gt[index][i] + 1.0 : neg_g_invh_gt[index][i]); // 0.0 because the "dense part" computation takes care of the value
     }
     // Dense part
-    for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
+    for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) {
             add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i] + 1.0, v);
         } else {
@@ -58,12 +54,13 @@ static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a
     }
 }
 
-static ssize_t rank_2_update_removal_index(size_t c, size_t i, const double invq[c][c], const iterable_set_t* a_set, const double neg_g_invh_gt[c][c], const double y[c]) {
+// Returns c if none found
+static size_t rank_2_update_removal_index(size_t c, size_t i, const double invq[c][c], const iterable_set_t* a_set, const double neg_g_invh_gt[c][c], const double y[c]) {
     double max = 0.0; // Overwritten immediately
-    ssize_t index = -1;
-    for (ssize_t j = set_first(a_set); j != -1; j = set_next(a_set, j)) {
+    size_t index = c;
+    for (size_t j = set_first(a_set); j != set_end(a_set); j = set_next(a_set, j)) {
         double divisor = 0.0;
-        for (ssize_t k = set_first(a_set); k != -1; k = set_next(a_set, k)) {
+        for (size_t k = set_first(a_set); k != set_end(a_set); k = set_next(a_set, k)) {
             // Note that since j is in a_set, we only have to consider "active columns" of invq
             // Also note that the order of indices for neg_g_invh_gt doesn't matter since it's symmetric
             if (k == i) {
@@ -72,7 +69,7 @@ static ssize_t rank_2_update_removal_index(size_t c, size_t i, const double invq
                 divisor += invq[j][k] * neg_g_invh_gt[i][k];
             }
         }
-        if ((divisor < -QP_RAMP_EPS) && (y[j]/divisor > max || index == -1)) {
+        if ((divisor < -QP_RAMP_EPS) && (y[j]/divisor > max || index == c)) {
             max = y[j]/divisor;
             index = j;
         }
@@ -90,7 +87,7 @@ static void update_y_and_invq(size_t c, size_t index, double q0, const iterable_
     }
     // Update invq
     scale_vector(c, v, -1.0/qdiv, v);
-    for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
+    for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) { // Just inserted
             memcpy(invq[i], v, c*sizeof(double));
             invq[i][i] += 1.0; // Pretend there was a unit vector in the column to start with
@@ -106,20 +103,20 @@ static void update_y_and_invq(size_t c, size_t index, double q0, const iterable_
 // v can be anything - call it temp?
 static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_set, const double neg_g_invh_gt[c][c], double v[c], double y[c]) {
     while (1) {
-        ssize_t index = most_negative_index(c, a_set, y);
-        if (index >= 0) {
+        size_t index = most_negative_index(c, a_set, y);
+        if (index != c) {
             compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
             set_remove(a_set, index);
             update_y_and_invq(c, index, 1.0, a_set, v, y, invq);
         } else {
             index = most_positive_index(c, a_set, y);
-            if (index < 0) {
+            if (index == c) {
                 break;
             }
 
             if (set_size(a_set) == p) {
-                ssize_t index2 = rank_2_update_removal_index(c, index, invq, a_set, neg_g_invh_gt, y);
-                if (index2 == -1) {
+                size_t index2 = rank_2_update_removal_index(c, index, invq, a_set, neg_g_invh_gt, y);
+                if (index2 == c) {
                     printf("WARNING: Unable to perform rank two update.\n");
                 } else {
                     compute_v(c, invq, a_set, index2, neg_g_invh_gt, v);

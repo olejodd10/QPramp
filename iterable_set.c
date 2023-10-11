@@ -2,30 +2,30 @@
 
 void set_init(iterable_set_t* set) {
     memset(set->elements, 0, set->capacity);
-    set->first = -1;
-    set->last = -1;
+    set->first = set->capacity;
+    set->last = set->capacity;
     set->size = 0;
 }
 
 void set_clear(iterable_set_t* set) {
-    for (ssize_t i = set_first(set); i != -1; i = set_next(set,i)) {
+    for (size_t i = set_first(set); i != set_end(set); i = set_next(set,i)) {
         set->elements[i] = 0; // Simplified removal
     }
-    set->first = -1;
-    set->last = -1;
+    set->first = set->capacity;
+    set->last = set->capacity;
     set->size = 0;
 }
 
 void set_insert(iterable_set_t* set, size_t element) {
     set->elements[element] = 1;
-    if (set->last == -1) { // First element
+    if (set->last == set->capacity) { // First element
         set->first = element;
-        set->prev[element] = -1; // Can drop this unless iterating backwards
+        set->prev[element] = set->capacity; // Can drop this unless iterating backwards
     } else {
         set->next[set->last] = element;
         set->prev[element] = set->last;
     }
-    set->next[element] = -1;
+    set->next[element] = set->capacity;
     set->last = element;
     set->size++;
 }
@@ -36,13 +36,13 @@ void set_remove(iterable_set_t* set, size_t element) {
     if (set->first == element) {
         set->first = set->next[element];
         if (set->last == element) {
-            set->last = -1;
+            set->last = set->capacity;
         } else {
-            set->prev[set->next[element]] = -1; // Can drop this unless iterating backwards
+            set->prev[set->next[element]] = set->capacity; // Can drop this unless iterating backwards
         }
     } else if (set->last == element) {
         set->last = set->prev[element];
-        set->next[set->prev[element]] = -1;
+        set->next[set->prev[element]] = set->capacity;
     } else {
         set->next[set->prev[element]] = set->next[element];
         set->prev[set->next[element]] = set->prev[element];
@@ -58,11 +58,15 @@ uint8_t set_contains(const iterable_set_t* set, size_t element) {
     return set->elements[element];
 }
 
-ssize_t set_first(const iterable_set_t* set) {
+size_t set_first(const iterable_set_t* set) {
     return set->first;
 }
 
 // Iterates through active elements in order of insertion
-ssize_t set_next(const iterable_set_t* set, size_t element) {
+size_t set_next(const iterable_set_t* set, size_t element) {
     return set->next[element];
+}
+
+size_t set_end(const iterable_set_t* set) {
+    return set->capacity;
 }

@@ -73,8 +73,8 @@ int main() {
 	double *t = (double*)malloc(SIMULATION_TIMESTEPS*sizeof(double));
 
 	uint8_t *setarr1 = (uint8_t*)malloc(c_dim*sizeof(uint8_t)); 
-	ssize_t *setarr2 = (ssize_t*)malloc(c_dim*sizeof(ssize_t)); 
-	ssize_t *setarr3 = (ssize_t*)malloc(c_dim*sizeof(ssize_t)); 
+	size_t *setarr2 = (size_t*)malloc(c_dim*sizeof(size_t)); 
+	size_t *setarr3 = (size_t*)malloc(c_dim*sizeof(size_t)); 
     iterable_set_t a_set = {
         .capacity = c_dim,
         .elements = setarr1,
