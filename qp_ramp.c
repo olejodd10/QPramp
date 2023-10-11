@@ -13,30 +13,30 @@ void qp_ramp_enable_infeasibility_warning(double min, double max) {
 }
 
 static ssize_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
-    double min = y[0];
-    size_t index = 0;
+    double min = -QP_RAMP_EPS;
+    size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
     for (ssize_t i = set_first(a_set); i != -1; i = set_next(a_set, i)) {
         if (y[i] < min) {
             min = y[i];
             index = i;
         }    
     }
-    if (!set_contains(a_set, index) || y[index] > -QP_RAMP_EPS) {
+    if (index == c) {
         return -1;
     }
     return index;
 }
 
 static ssize_t most_positive_index(size_t c, const iterable_set_t* a_set, double y[c]) {
-    double max = y[0];
-    size_t index = 0;
-    for (size_t i = 1; i < c; ++i) {
+    double max = QP_RAMP_EPS;
+    size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
+    for (size_t i = 0; i < c; ++i) {
         if (y[i] > max && !set_contains(a_set, i)) {
             max = y[i];
             index = i;
         }    
     }
-    if (set_contains(a_set, index) || y[index] < QP_RAMP_EPS) {
+    if (index == c) {
         return -1;
     }
     return index;
