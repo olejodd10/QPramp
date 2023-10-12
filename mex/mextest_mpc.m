@@ -1,0 +1,32 @@
+m = 4;
+timesteps = 100;
+
+folder = "../../examples/example3";
+a = csvread(folder + "/a.csv");
+b = csvread(folder + "/b.csv");
+x0 = csvread(folder + "/x0.csv");
+invh = csvread(folder + "/invh.csv");
+w = csvread(folder + "/w.csv");
+g = csvread(folder + "/g.csv");
+s = csvread(folder + "/s.csv");
+f = csvread(folder + "/f.csv");
+
+neg_g_invh_gt = -g*invh*g';
+neg_s = -s;
+neg_w = -w;
+neg_invh_f = -invh*f;
+neg_g_invh = -g*invh;
+
+p = size(neg_invh_f, 1);
+
+neg_invh_f_short = neg_invh_f(1:m,:);
+neg_g_invh_short = neg_g_invh(:,1:m);
+x = x0(1,:)';
+
+tic;
+for i = 1:timesteps
+    u = qp_ramp_solve_mpc(p, neg_g_invh_gt', neg_s', neg_w', neg_invh_f_short', neg_g_invh_short', x');
+    x = a*x + b*u';
+end
+toc;
+disp(x');

@@ -8,7 +8,12 @@ ARCHIVE := $(BUILD_DIR)/lib$(LIB).a
 SOURCES := qp_ramp.c csv.c timing.c vector.c matrix.c lti.c iterable_set.c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
-.PHONY: all run clean lib
+MEX_DIR := mex
+MEX_FUNCTIONS := qp_ramp_solve_mpc qp_ramp_solve
+MEX_FILES := $(patsubst %, $(MEX_DIR)/%.mexa64, $(MEX_FUNCTIONS)) 
+MATLAB_PATH := /home/ole/programs/matlab/bin/matlab
+
+.PHONY: all run clean lib mex
 all: run
 
 run: $(EXECUTABLE)
@@ -27,6 +32,11 @@ $(ARCHIVE): $(OBJECTS)
 
 $(EXECUTABLE): $(EXECUTABLE).c $(ARCHIVE)
 	$(CC) $(FLAGS) $< -o $@ -L. -l:$(ARCHIVE)
+
+mex: $(MEX_FILES)
+
+$(MEX_DIR)/%.mexa64: $(MEX_DIR)/%.c $(ARCHIVE)
+	$(MATLAB_PATH) -nodesktop -nosplash -r "mex -L. -l:$(ARCHIVE) -outdir $(MEX_DIR) $<; exit;"
 
 clean:
 	rm -rf $(BUILD_DIR)
