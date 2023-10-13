@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <omp.h>
 #include <math.h>
 #include "vector.h"
 

@@ -15,6 +15,7 @@ void outer_product(size_t n, const double v1[n], const double v2[n], double res[
 }
 
 void matrix_vector_product(size_t m, size_t n, const double mat[m][n], const double vec[n], double res[m]) {
+    #pragma omp parallel for num_threads(8)
     for (size_t i = 0; i < m; ++i) {
         res[i] = inner_product(n, mat[i], vec);
     }
