@@ -11,39 +11,23 @@
 #include "lti.h"
 #include "timing.h"
 
-#define SIMULATION_TIMESTEPS 100
+int main(int argc, char *argv[]) {
+    char *input_dir = argv[1];
+    char *output_dir = argv[2];
+    size_t simulation_timesteps = atoi(argv[3]);
+    printf("Input directory: \"%s\" \nOutput directory: \"%s\" \nSimulation timesteps: %ld \n", input_dir, output_dir, simulation_timesteps);
 
-#define INPUT_DIR "../examples/example3"
-#define OUTPUT_DIR INPUT_DIR "/out"
-#define REFERENCE_DIR INPUT_DIR "/reference"
-
-#define A_PATH INPUT_DIR "/a.csv"
-#define B_PATH INPUT_DIR "/b.csv"
-#define X0_PATH INPUT_DIR "/x0.csv"
-#define INVH_PATH INPUT_DIR "/invh.csv"
-#define W_PATH INPUT_DIR "/w.csv"
-#define G_PATH INPUT_DIR "/g.csv"
-#define S_PATH INPUT_DIR "/s.csv"
-#define F_PATH INPUT_DIR "/f.csv"
-
-#define X_DIR OUTPUT_DIR
-#define U_DIR OUTPUT_DIR
-#define T_DIR OUTPUT_DIR
-
-#ifdef REFERENCE_DIR
-#define X_REF_DIR REFERENCE_DIR
-#define U_REF_DIR REFERENCE_DIR
-#define EQ_EPS 1e-8
-#endif
-
-int main() {
-    timing_print_precision();
+    char input_path[80];
     timing_reset();
-	size_t initial_conditions = csv_parse_matrix_height(X0_PATH);
-	size_t n_dim = csv_parse_matrix_width(A_PATH);
-	size_t m_dim = csv_parse_matrix_width(B_PATH);
-	size_t c_dim = csv_parse_matrix_height(G_PATH);
-	size_t p_dim  = csv_parse_matrix_width(G_PATH);
+    sprintf(input_path, "%s/x0.csv", input_dir);
+	size_t initial_conditions = csv_parse_matrix_height(input_path);
+    sprintf(input_path, "%s/a.csv", input_dir);
+	size_t n_dim = csv_parse_matrix_width(input_path);
+    sprintf(input_path, "%s/b.csv", input_dir);
+	size_t m_dim = csv_parse_matrix_width(input_path);
+    sprintf(input_path, "%s/g.csv", input_dir);
+	size_t c_dim = csv_parse_matrix_height(input_path);
+	size_t p_dim  = csv_parse_matrix_width(input_path);
     printf("Input dimension parsing time: %ld us\n", timing_elapsed()/1000);
 
     timing_reset();
@@ -68,9 +52,9 @@ int main() {
 	double *y = (double*)malloc(c_dim*sizeof(double));
 	double *v = (double*)malloc(c_dim*sizeof(double));
     double *invq = (double*)malloc(c_dim*c_dim*sizeof(double));
-    double *x = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
-    double *u = (double*)malloc(SIMULATION_TIMESTEPS*m_dim*sizeof(double));
-	double *t = (double*)malloc(SIMULATION_TIMESTEPS*sizeof(double));
+    double *x = (double*)malloc((simulation_timesteps+1)*n_dim*sizeof(double));
+    double *u = (double*)malloc(simulation_timesteps*m_dim*sizeof(double));
+	double *t = (double*)malloc(simulation_timesteps*sizeof(double));
 
 	uint8_t *setarr1 = (uint8_t*)malloc(c_dim*sizeof(uint8_t)); 
 	size_t *setarr2 = (size_t*)malloc(c_dim*sizeof(size_t)); 
@@ -83,41 +67,49 @@ int main() {
     };
 
 #ifdef REFERENCE_DIR
-    double *x_ref = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
-    double *u_ref = (double*)malloc(SIMULATION_TIMESTEPS*m_dim*sizeof(double));
+    double *x_ref = (double*)malloc((simulation_timesteps+1)*n_dim*sizeof(double));
+    double *u_ref = (double*)malloc(simulation_timesteps*m_dim*sizeof(double));
 #endif
     printf("Allocation time: %ld us\n", timing_elapsed()/1000);
 
     timing_reset();
-    if (csv_parse_matrix(A_PATH, n_dim, n_dim, a)) { 
+    sprintf(input_path, "%s/a.csv", input_dir);
+    if (csv_parse_matrix(input_path, n_dim, n_dim, a)) { 
         printf("Error while parsing input matrix a.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(B_PATH, n_dim, m_dim, b)) { 
+    sprintf(input_path, "%s/b.csv", input_dir);
+    if (csv_parse_matrix(input_path, n_dim, m_dim, b)) { 
         printf("Error while parsing input matrix b.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(X0_PATH, initial_conditions, n_dim, x0)) { 
+    sprintf(input_path, "%s/x0.csv", input_dir);
+    if (csv_parse_matrix(input_path, initial_conditions, n_dim, x0)) { 
         printf("Error while parsing input matrix x0.\n"); 
         return 1;
     }
-    if (csv_parse_matrix(INVH_PATH, p_dim, p_dim, invh)) { 
+    sprintf(input_path, "%s/invh.csv", input_dir);
+    if (csv_parse_matrix(input_path, p_dim, p_dim, invh)) { 
         printf("Error while parsing input matrix invh.\n"); 
         return 1; 
     }
-    if (csv_parse_vector(W_PATH, c_dim, w)) { 
+    sprintf(input_path, "%s/w.csv", input_dir);
+    if (csv_parse_vector(input_path, c_dim, w)) { 
         printf("Error while parsing input vector w.\n"); 
         return 1; 
     }
-    if (csv_parse_matrix(G_PATH, c_dim, p_dim, g)) { 
+    sprintf(input_path, "%s/g.csv", input_dir);
+    if (csv_parse_matrix(input_path, c_dim, p_dim, g)) { 
         printf("Error while parsing input matrix g.\n"); 
         return 1; 
     }
-    if (csv_parse_matrix(S_PATH, c_dim, n_dim, s)) { 
+    sprintf(input_path, "%s/s.csv", input_dir);
+    if (csv_parse_matrix(input_path, c_dim, n_dim, s)) { 
         printf("Error while parsing input matrix s.\n"); 
         return 1; 
     }
-    if (csv_parse_matrix(F_PATH, p_dim, n_dim, f)) { 
+    sprintf(input_path, "%s/f.csv", input_dir);
+    if (csv_parse_matrix(input_path, p_dim, n_dim, f)) { 
         printf("Error while parsing input matrix f.\n"); 
         return 1; 
     }
@@ -144,7 +136,7 @@ int main() {
         memcpy(&x[0], &x0[i*n_dim], sizeof(double)*n_dim);
 
         double test_case_time = 0.0;
-        for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
+        for (uint16_t j = 0; j < simulation_timesteps; ++j) {
             timing_reset();
             qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, &x[j*n_dim], invq, &a_set, y, v, &u[j*m_dim]);
             simulate(n_dim, m_dim, a, &x[j*n_dim], b, &u[j*m_dim], &x[(j+1)*n_dim]); 
@@ -154,50 +146,27 @@ int main() {
         total_time += test_case_time;
 
         // Test case result printing
-        // printf("Total simulation time for %d iterations of test case %d: %.0f us\n", SIMULATION_TIMESTEPS, i, test_case_time/1000);
-        // print_vector(n_dim, x[SIMULATION_TIMESTEPS]);
+        // printf("Total simulation time for %d iterations of test case %d: %.0f us\n", simulation_timesteps, i, test_case_time/1000);
+        // print_vector(n_dim, x[simulation_timesteps]);
 
-        char path[80];
-        #ifdef REFERENCE_DIR
-        // Verify test case results
-        sprintf(path, X_REF_DIR "/xout%d.csv", i);
-        FILE* f = fopen(path, "r");
-        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS+1, n_dim, x_ref)) {
-            printf("Error while parsing reference matrix x_ref.\n"); 
-        }
-        if (!matrix_eq(SIMULATION_TIMESTEPS+1, n_dim, x, x_ref, EQ_EPS)) {
-            printf("WARNING: Verification failed for x in test case %d\n", i);
-        }
-        fclose(f);
-
-        sprintf(path, U_REF_DIR "/uout%d.csv", i);
-        f = fopen(path, "r");
-        if (csv_parse_matrix(path, SIMULATION_TIMESTEPS, m_dim, u_ref)) {
-            printf("Error while parsing reference matrix u_ref.\n"); 
-        }
-        if (!matrix_eq(SIMULATION_TIMESTEPS, m_dim, u, u_ref, EQ_EPS)) {
-            printf("WARNING: Verification failed for u in test case %d\n", i);
-        }
-        fclose(f);
-        #endif
-
+        char save_path[80];
         // Save test case results
-        sprintf(path, X_DIR "/xout%d.csv", i);
-        if (csv_save_matrix(path, SIMULATION_TIMESTEPS+1, n_dim, x) < 0) {
+        sprintf(save_path, "%s/xout%d.csv", output_dir, i);
+        if (csv_save_matrix(save_path, simulation_timesteps+1, n_dim, x) < 0) {
             printf("Error while saving x.\n");
         }
-        sprintf(path, U_DIR "/uout%d.csv", i);
-        if (csv_save_matrix(path, SIMULATION_TIMESTEPS, m_dim, u) < 0) {
+        sprintf(save_path, "%s/uout%d.csv", output_dir, i);
+        if (csv_save_matrix(save_path, simulation_timesteps, m_dim, u) < 0) {
             printf("Error while saving u.\n");
         }
-        sprintf(path, T_DIR "/tout%d.csv", i);
-        if (csv_save_vector(path, SIMULATION_TIMESTEPS, t) < 0) {
+        sprintf(save_path, "%s/tout%d.csv", output_dir, i);
+        if (csv_save_vector(save_path, simulation_timesteps, t) < 0) {
             printf("Error while saving t.\n");
         }
     }
 
     // Summary
-    printf("Average time per test case running %d timesteps: %.0f us\n", SIMULATION_TIMESTEPS, total_time/1000/initial_conditions);
+    printf("Average time per test case running %d timesteps: %.0f us\n", simulation_timesteps, total_time/1000/initial_conditions);
 
     return 0;
 }

@@ -20,10 +20,7 @@ CC := gcc
 FLAGS := -Ofast -g
 
 .PHONY: all run clean lib
-all: run
-
-run: $(EXAMPLE)
-	./$<
+all: $(EXAMPLE)
 
 lib: $(ARCHIVE)
 
