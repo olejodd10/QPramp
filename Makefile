@@ -1,17 +1,28 @@
+SRC_DIR := src
+BUILD_DIR := build
+
+INCLUDE_PATHS := include
+INCLUDE_FLAGS := $(addprefix -I, $(INCLUDE_PATHS))
+
+LIB_PATHS := 
+LIBS := -lm
+LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS)
+
+ARCHIVE := libqpramp.a
+SOURCES := qp_ramp.c vector.c iterable_set.c
+OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
+
+EXAMPLE := main
+EXAMPLE_SOURCES := main.c lti.c csv.c timing.c matrix.c  
+EXAMPLE_OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(EXAMPLE_SOURCES)) 
+
 CC := gcc
 FLAGS := -Ofast -g
-
-BUILD_DIR := build
-EXECUTABLE := main
-LIB := qpramp
-ARCHIVE := $(BUILD_DIR)/lib$(LIB).a
-SOURCES := qp_ramp.c csv.c timing.c vector.c matrix.c lti.c iterable_set.c
-OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
 .PHONY: all run clean lib
 all: run
 
-run: $(EXECUTABLE)
+run: $(EXAMPLE)
 	./$<
 
 lib: $(ARCHIVE)
@@ -19,14 +30,14 @@ lib: $(ARCHIVE)
 $(BUILD_DIR):
 	mkdir $@
 
-$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
-	$(CC) $(FLAGS) -c $< -o $@
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	$(CC) -c $< -o $@ $(FLAGS) $(INCLUDE_FLAGS) $(LIB_FLAGS)
 
 $(ARCHIVE): $(OBJECTS)
 	ar rcs $@ $(OBJECTS)
 
-$(EXECUTABLE): $(EXECUTABLE).c $(ARCHIVE)
-	$(CC) $(FLAGS) $< -o $@ -L. -l:$(ARCHIVE)
+$(EXAMPLE): $(EXAMPLE_OBJECTS) $(ARCHIVE)
+	$(CC) $(EXAMPLE_OBJECTS) -o $@ $(FLAGS) $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE)
 
 clean:
 	rm -rf $(BUILD_DIR)
