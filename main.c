@@ -24,9 +24,12 @@
 
 #define QPOASES_H_PATH INPUT_DIR "/osqp_p.csv"
 #define QPOASES_G_PATH INPUT_DIR "/osqp_q.csv"
-#define QPOASES_LBA_PATH INPUT_DIR "/osqp_l.csv"
-#define QPOASES_A_PATH INPUT_DIR "/osqp_a.csv"
-#define QPOASES_UBA_PATH INPUT_DIR "/osqp_u.csv"
+#define QPOASES_LBA_PATH INPUT_DIR "/qpoases_lba.csv"
+#define QPOASES_LB_PATH INPUT_DIR "/qpoases_lb.csv"
+#define OSQP_A_PATH INPUT_DIR "/osqp_a.csv"
+#define QPOASES_A_PATH INPUT_DIR "/qpoases_a.csv"
+#define QPOASES_UBA_PATH INPUT_DIR "/qpoases_uba.csv"
+#define QPOASES_UB_PATH INPUT_DIR "/qpoases_ub.csv"
 
 #define X_DIR OUTPUT_DIR
 #define U_DIR OUTPUT_DIR
@@ -44,9 +47,14 @@ int main() {
 	size_t initial_conditions = csv_parse_matrix_height(X0_PATH);
 	size_t n_dim = csv_parse_matrix_width(A_PATH);
 	size_t m_dim = csv_parse_matrix_width(B_PATH);
-	size_t c_dim = csv_parse_matrix_height(QPOASES_A_PATH);
+	size_t old_c_dim = csv_parse_matrix_height(OSQP_A_PATH);
+    size_t cropped_c_dim = csv_parse_matrix_height(QPOASES_A_PATH);
 	size_t p_dim  = csv_parse_matrix_width(QPOASES_A_PATH);
     size_t horizon = (p_dim - n_dim)/(n_dim + m_dim);
+    size_t bounds_dim = (horizon+1)*n_dim+horizon*m_dim;
+    if (cropped_c_dim != old_c_dim - bounds_dim) {
+        printf("WARNING: disagree on cropped_c_dim\n");
+    }
     printf("Input dimension parsing time: %ld us\n", timing_elapsed()/1000);
 
     timing_reset();
@@ -55,12 +63,14 @@ int main() {
     double *x0 = (double*)malloc(initial_conditions*n_dim*sizeof(double));
 
     real_t *qpoases_h = (real_t*)malloc(p_dim*p_dim*sizeof(real_t));
-    real_t *qpoases_a = (real_t*)malloc(c_dim*p_dim*sizeof(real_t));
+    real_t *qpoases_a = (real_t*)malloc(cropped_c_dim*p_dim*sizeof(real_t));
     real_t *qpoases_g = (real_t*)malloc(p_dim*sizeof(real_t));
-    real_t *qpoases_lba = (real_t*)malloc(c_dim*sizeof(real_t));
-    real_t *qpoases_uba = (real_t*)malloc(c_dim*sizeof(real_t));
+    real_t *qpoases_lba = (real_t*)malloc(cropped_c_dim*sizeof(real_t));
+    real_t *qpoases_uba = (real_t*)malloc(cropped_c_dim*sizeof(real_t));
+    real_t *qpoases_lb = (real_t*)malloc(bounds_dim*sizeof(real_t));
+    real_t *qpoases_ub = (real_t*)malloc(bounds_dim*sizeof(real_t));
     real_t *xOpt = (real_t*)malloc(p_dim*sizeof(real_t));
-    real_t *yOpt = (real_t*)malloc((c_dim+p_dim)*sizeof(real_t));
+    real_t *yOpt = (real_t*)malloc((cropped_c_dim+p_dim)*sizeof(real_t));
 
     double *x = (double*)malloc((SIMULATION_TIMESTEPS+1)*n_dim*sizeof(double));
     double *u = (double*)malloc(SIMULATION_TIMESTEPS*m_dim*sizeof(double));
@@ -90,7 +100,7 @@ int main() {
 		printf("Error while parsing input matrix qpoases_h.\n");
 		return 1;
 	}
-    if (csv_parse_matrix(QPOASES_A_PATH, c_dim, p_dim, qpoases_a)) { 
+    if (csv_parse_matrix(QPOASES_A_PATH, cropped_c_dim, p_dim, qpoases_a)) { 
 		printf("Error while parsing input matrix qpoases_a.\n");
 		return 1;
 	}
@@ -98,12 +108,20 @@ int main() {
 		printf("Error while parsing input vector qpoases_g.\n");
 		return 1;
 	}
-    if (csv_parse_vector(QPOASES_LBA_PATH, c_dim, qpoases_lba)) { 
+    if (csv_parse_vector(QPOASES_LBA_PATH, cropped_c_dim, qpoases_lba)) { 
 		printf("Error while parsing input vector qpoases_lba.\n");
 		return 1;
 	}
-    if (csv_parse_vector(QPOASES_UBA_PATH, c_dim, qpoases_uba)) { 
+    if (csv_parse_vector(QPOASES_UBA_PATH, cropped_c_dim, qpoases_uba)) { 
 		printf("Error while parsing input vector qpoases_uba.\n");
+		return 1;
+	}
+    if (csv_parse_vector(QPOASES_LB_PATH, bounds_dim, qpoases_lb)) { 
+		printf("Error while parsing input vector qpoases_lb.\n");
+		return 1;
+	}
+    if (csv_parse_vector(QPOASES_UB_PATH, bounds_dim, qpoases_ub)) { 
+		printf("Error while parsing input vector qpoases_ub.\n");
 		return 1;
 	}
     printf("Input parsing time: %ld us\n", timing_elapsed()/1000);
@@ -112,7 +130,7 @@ int main() {
 	qpOASES_Options_init( &options,2 ); // 0 for default, 1 for reliable and 2 for MPC
 	options.printLevel = PL_NONE;
 
-	QProblem_setup(	p_dim,c_dim,HST_POSDEF); // TODO
+	QProblem_setup(	p_dim,cropped_c_dim,HST_POSDEF); // TODO
 
     real_t obj;
     int nWSR;
@@ -134,9 +152,9 @@ int main() {
         for (uint16_t j = 0; j < SIMULATION_TIMESTEPS; ++j) {
             timing_reset();
 
-            nWSR = c_dim+1; // TODO
+            nWSR = cropped_c_dim+1; // TODO
             if (initialized) {
-                int ret = QProblem_hotstart(	qpoases_g,NULL,NULL,qpoases_lba,qpoases_uba,
+                int ret = QProblem_hotstart(	qpoases_g,qpoases_lb,qpoases_ub,qpoases_lba,qpoases_uba,
                         (int_t* const)&nWSR,0,
                         xOpt,yOpt,&obj,(int_t* const)&status
                         );
@@ -145,7 +163,7 @@ int main() {
                 // }
                 // printf("Hot start ret val and status: %d %d\n", ret, status);
             } else {
-                int ret = QProblem_init(	qpoases_h,qpoases_g,qpoases_a,NULL,NULL,qpoases_lba,qpoases_uba,
+                int ret = QProblem_init(	qpoases_h,qpoases_g,qpoases_a,qpoases_lb,qpoases_ub,qpoases_lba,qpoases_uba,
                         (int_t* const)&nWSR,0,&options,
                         xOpt,yOpt,&obj,(int_t* const)&status
                         );
