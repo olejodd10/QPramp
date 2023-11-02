@@ -3,10 +3,9 @@
 #include "../qp_ramp.h"
 #include <stdlib.h>
 
-static double *invq = NULL;
-static double *y = NULL;
-static double *v = NULL;
-
+static double *invq;
+static double *y;
+static double *v;
 static uint8_t *setarr1;
 static ssize_t *setarr2;
 static ssize_t *setarr3;

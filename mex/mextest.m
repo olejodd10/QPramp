@@ -18,11 +18,17 @@ neg_g_invh = -g*invh;
 
 neg_invh_f = -invh*f;
 
+% Transposing in the loop gives dramatic slowdown
+neg_g_invh_gt_t = neg_g_invh_gt';
+neg_s_t = neg_s';
+neg_w_t = neg_w';
+neg_g_invh_t = neg_g_invh';
+
 x = x0(1,:)';
 
 tic;
 for i = 1:timesteps
-    z = qp_ramp_solve(neg_g_invh_gt', neg_s', neg_w', neg_g_invh', x');
+    z = qp_ramp_solve(neg_g_invh_gt_t, neg_s_t, neg_w_t, neg_g_invh_t, x');
     u = z(1:m)' + neg_invh_f(1:m,:)*x;
     x = a*x + b*u;
 end
