@@ -1,5 +1,4 @@
 #include "mex.h"
-#include "matrix.h" // For realloc. Note that this is not the qp-ramp module ../matrix.h!
 #include "../qp_ramp.h"
 #include <stdlib.h>
 
@@ -90,7 +89,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     allocate(c);
     set_init(&a_set);
-    qp_ramp_solve_mpc(c, n, m, p, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, x, invq, &a_set, y, v, u);
+    qp_ramp_solve_mpc(c, n, m, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, x, (double(*)[])invq, &a_set, y, v, u);
     deallocate();
 }
  

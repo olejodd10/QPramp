@@ -1,4 +1,3 @@
-m = 4;
 timesteps = 100;
 
 folder = "../../examples/example3";
@@ -16,9 +15,10 @@ neg_s = -s;
 neg_w = -w;
 neg_g_invh = -g*invh;
 
+m = size(b, 2);
 neg_invh_f = -invh*f;
 
-% Transposing in the loop gives dramatic slowdown
+% Transposing in the loop gives big slowdown
 neg_g_invh_gt_t = neg_g_invh_gt';
 neg_s_t = neg_s';
 neg_w_t = neg_w';
