@@ -9,7 +9,7 @@ LIBS := -lm
 LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS)
 
 ARCHIVE := libqpramp.a
-SOURCES := qp_ramp.c vector.c iterable_set.c
+SOURCES := qp_ramp.c vector.c matrix.c iterable_set.c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
 EXAMPLE := main
@@ -19,7 +19,7 @@ EXAMPLE_OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(EXAMPLE_SOURCES))
 CC := gcc
 FLAGS := -Ofast -g
 
-.PHONY: all run clean lib
+.PHONY: all clean lib
 all: $(EXAMPLE)
 
 lib: $(ARCHIVE)
