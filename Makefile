@@ -16,10 +16,15 @@ EXAMPLE := main
 EXAMPLE_SOURCES := main.c lti.c csv.c timing.c matrix.c  
 EXAMPLE_OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(EXAMPLE_SOURCES)) 
 
+MEX_DIR := mex
+MEX_FUNCTIONS := qp_ramp_solve_mpc qp_ramp_solve
+MEX_FILES := $(patsubst %, $(MEX_DIR)/%.mexa64, $(MEX_FUNCTIONS)) 
+MATLAB_PATH := /home/ole/programs/matlab/bin/matlab
+
 CC := gcc
 FLAGS := -Ofast -g
 
-.PHONY: all clean lib
+.PHONY: all clean lib mex
 all: $(EXAMPLE)
 
 lib: $(ARCHIVE)
@@ -35,6 +40,11 @@ $(ARCHIVE): $(OBJECTS)
 
 $(EXAMPLE): $(EXAMPLE_OBJECTS) $(ARCHIVE)
 	$(CC) $(EXAMPLE_OBJECTS) -o $@ $(FLAGS) $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE)
+
+mex: $(MEX_FILES)
+
+$(MEX_DIR)/%.mexa64: $(MEX_DIR)/%.c $(ARCHIVE)
+	$(MATLAB_PATH) -nodesktop -nosplash -r "mex $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE) -outdir $(MEX_DIR) $<; exit;"
 
 clean:
 	rm -rf $(BUILD_DIR)
