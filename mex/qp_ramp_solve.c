@@ -1,38 +1,5 @@
 #include "mex.h"
 #include "qp_ramp.h"
-#include <stdlib.h>
-
-static double *invq;
-static double *y;
-static double *v;
-static uint8_t *setarr1;
-static ssize_t *setarr2;
-static ssize_t *setarr3;
-static iterable_set_t a_set;
-
-static void allocate(size_t c) {
-	invq = (double*)mxMalloc((mwSize)(c*c*sizeof(double)));
-	y = (double*)mxMalloc((mwSize)(c*sizeof(double)));
-	v = (double*)mxMalloc((mwSize)(c*sizeof(double)));
-	setarr1 = (uint8_t*)mxMalloc((mwSize)(c*sizeof(uint8_t))); 
-	setarr2 = (ssize_t*)mxMalloc((mwSize)(c*sizeof(ssize_t))); 
-	setarr3 = (ssize_t*)mxMalloc((mwSize)(c*sizeof(ssize_t))); 
-    a_set = (iterable_set_t) {
-        .capacity = c,
-        .elements = setarr1,
-        .next = setarr2,
-        .prev = setarr3,
-    };
-}
-
-static void deallocate() {
-	mxFree(invq);
-	mxFree(y);
-	mxFree(v);
-	mxFree(setarr1);
-	mxFree(setarr2);
-	mxFree(setarr3);
-}
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if(nrhs!=5) {
@@ -79,9 +46,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     plhs[0] = mxCreateDoubleMatrix(1,(mwSize)p,mxREAL);
     double *z = mxGetPr(plhs[0]);
 
-    allocate(c);
-    set_init(&a_set);
-    qp_ramp_solve(c, n, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_g_invh, x, (double(*)[])invq, &a_set, y, v, z);
-    deallocate();
+    qp_ramp_init(c);
+    qp_ramp_solve(c, n, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_g_invh, x, z);
+    qp_ramp_cleanup();
 }
  

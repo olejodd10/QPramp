@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -16,7 +17,9 @@ typedef struct {
     size_t last;
 } iterable_set_t;
 
-void set_init(iterable_set_t* set);
+void set_init(iterable_set_t* set, size_t capacity);
+
+void set_destroy(iterable_set_t* set);
 
 void set_clear(iterable_set_t* set);
 

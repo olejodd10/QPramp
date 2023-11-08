@@ -6,6 +6,25 @@ static uint8_t infeasiblity_warning_enabled = 0;
 static double infeasibility_warning_min;
 static double infeasibility_warning_max;
 
+static double *y = NULL;
+static double *v = NULL;
+static double *invq = NULL;
+static iterable_set_t a_set;
+
+void qp_ramp_init(size_t c) {
+	y = (double*)malloc(c*sizeof(double));
+	v = (double*)malloc(c*sizeof(double));
+    invq = (double*)malloc(c*c*sizeof(double));
+    set_init(&a_set, c);
+}
+
+void qp_ramp_cleanup(void) {
+	free(y);
+	free(v);
+	free(invq);
+    set_destroy(&a_set);
+}
+
 void qp_ramp_enable_infeasibility_warning(double min, double max) {
     infeasiblity_warning_enabled = 1;
     infeasibility_warning_min = min;
@@ -150,21 +169,21 @@ static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const d
     }
 }
 
-void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double invq[c][c], iterable_set_t* a_set, double y[c], double v[c], double z[p]) {
-    set_clear(a_set);
+void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
+    set_clear(&a_set);
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
-    algorithm1(c, p, invq, a_set, neg_g_invh_gt, v, y);
+    algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_z(c, p, neg_g_invh, y, z);
 }
 
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double invq[c][c], iterable_set_t* a_set, double y[c], double v[c], double u[m]) {
-    set_clear(a_set);
+void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
+    set_clear(&a_set);
     matrix_vector_product(c, n, neg_s, x, y);
     vector_sum(c, y, neg_w, y);
-    algorithm1(c, p, invq, a_set, neg_g_invh_gt, v, y);
+    algorithm1(c, p, (double(*)[])invq, &a_set, neg_g_invh_gt, v, y);
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
 }

@@ -45,26 +45,12 @@ int main(int argc, char *argv[]) {
     double *neg_s = (double*)malloc(c_dim*n_dim*sizeof(double));
     double *neg_invh = (double*)malloc(p_dim*p_dim*sizeof(double)); // Only used once for initial setup
     double *neg_invh_f = (double*)malloc(m_dim*n_dim*sizeof(double)); // Actually p_dim x n_dim, but we only need the m_dim first rows
-    double *neg_invh_gt = (double*)malloc(p_dim*c_dim*sizeof(double));
     double *neg_g_invh = (double*)malloc(c_dim*p_dim*sizeof(double));
     double *neg_g_invh_gt = (double*)malloc(c_dim*c_dim*sizeof(double));
         
-	double *y = (double*)malloc(c_dim*sizeof(double));
-	double *v = (double*)malloc(c_dim*sizeof(double));
-    double *invq = (double*)malloc(c_dim*c_dim*sizeof(double));
     double *x = (double*)malloc((simulation_timesteps+1)*n_dim*sizeof(double));
     double *u = (double*)malloc(simulation_timesteps*m_dim*sizeof(double));
 	double *t = (double*)malloc(simulation_timesteps*sizeof(double));
-
-	uint8_t *setarr1 = (uint8_t*)malloc(c_dim*sizeof(uint8_t)); 
-	size_t *setarr2 = (size_t*)malloc(c_dim*sizeof(size_t)); 
-	size_t *setarr3 = (size_t*)malloc(c_dim*sizeof(size_t)); 
-    iterable_set_t a_set = {
-        .capacity = c_dim,
-        .elements = setarr1,
-        .next = setarr2,
-        .prev = setarr3,
-    };
 
 #ifdef REFERENCE_DIR
     double *x_ref = (double*)malloc((simulation_timesteps+1)*n_dim*sizeof(double));
@@ -122,11 +108,18 @@ int main(int argc, char *argv[]) {
     transpose(p_dim, n_dim, (double(*)[])f, (double(*)[])ft);
     negate_matrix(p_dim, p_dim, (double(*)[])invh, (double(*)[])neg_invh);
     matrix_product(m_dim, p_dim, n_dim, (double(*)[])neg_invh, (double(*)[])ft, (double(*)[])neg_invh_f);
-    matrix_product(p_dim, p_dim, c_dim, (double(*)[])neg_invh, (double(*)[])g, (double(*)[])neg_invh_gt);
     matrix_product(c_dim, p_dim, p_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(c_dim, p_dim, c_dim, (double(*)[])g, (double(*)[])neg_g_invh, (double(*)[])neg_g_invh_gt);
     matrix_product(c_dim, p_dim, m_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Make sure memory layout is correct for later use
-    set_init(&a_set);
+    // Free memory that's no longer needed
+    free(invh);
+	free(w);
+    free(g);
+    free(s);
+    free(f);
+    free(ft);
+    free(neg_invh);
+    qp_ramp_init(c_dim);
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
@@ -138,7 +131,7 @@ int main(int argc, char *argv[]) {
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < simulation_timesteps; ++j) {
             timing_reset();
-            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, &x[j*n_dim], (double(*)[])invq, &a_set, y, v, &u[j*m_dim]);
+            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, &x[j*n_dim], &u[j*m_dim]);
             simulate(n_dim, m_dim, (double(*)[])a, &x[j*n_dim], (double(*)[])b, &u[j*m_dim], &x[(j+1)*n_dim]); 
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
@@ -167,6 +160,20 @@ int main(int argc, char *argv[]) {
 
     // Summary
     printf("Average time per test case running %ld timesteps: %.0f us\n", simulation_timesteps, total_time/1000/initial_conditions);
+
+    // Free the rest of the memory
+    free(a);
+    free(b);
+    free(x0);
+	free(neg_w);
+    free(neg_s);
+    free(neg_invh_f);
+    free(neg_g_invh);
+    free(neg_g_invh_gt);
+    free(x);
+    free(u);
+	free(t);
+    qp_ramp_cleanup();
 
     return 0;
 }

@@ -1,10 +1,20 @@
 #include "iterable_set.h"
 
-void set_init(iterable_set_t* set) {
-    memset(set->elements, 0, set->capacity);
-    set->first = set->capacity;
-    set->last = set->capacity;
+void set_init(iterable_set_t* set, size_t capacity) {
+    set->capacity = capacity;
+    set->elements = (uint8_t*)malloc(capacity*sizeof(uint8_t));
+    set->next = (size_t*)malloc(capacity*sizeof(size_t));
+    set->prev = (size_t*)malloc(capacity*sizeof(size_t));
+    memset(set->elements, 0, capacity);
+    set->first = capacity;
+    set->last = capacity;
     set->size = 0;
+}
+
+void set_destroy(iterable_set_t* set) {
+	free(set->elements);
+	free(set->next);
+	free(set->prev);
 }
 
 void set_clear(iterable_set_t* set) {
