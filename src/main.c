@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     free(f);
     free(ft);
     free(neg_invh);
-    qp_ramp_init(c_dim);
+    qp_ramp_init(c_dim, p_dim);
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
