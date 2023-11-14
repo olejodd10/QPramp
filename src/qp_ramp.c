@@ -82,11 +82,7 @@ static size_t rank_2_update_removal_index(size_t c, size_t i, const double invq[
         for (size_t k = set_first(a_set); k != set_end(a_set); k = set_next(a_set, k)) {
             // Note that since j is in a_set, we only have to consider "active columns" of invq
             // Also note that the order of indices for neg_g_invh_gt doesn't matter since it's symmetric
-            if (k == i) {
-                divisor += invq[j][k] * (neg_g_invh_gt[i][k] + 1.0);
-            } else {
-                divisor += invq[j][k] * neg_g_invh_gt[i][k];
-            }
+            divisor += invq[k][j] * neg_g_invh_gt[i][k];
         }
         if ((divisor < -QP_RAMP_EPS) && (y[j]/divisor > max || index == c)) {
             max = y[j]/divisor;
