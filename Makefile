@@ -33,18 +33,19 @@ $(BUILD_DIR):
 	mkdir $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
-	$(CC) -c $< -o $@ $(FLAGS) $(INCLUDE_FLAGS) $(LIB_FLAGS)
+	$(CC) -c $< -o $@ $(FLAGS) $(INCLUDE_FLAGS)
 
 $(ARCHIVE): $(OBJECTS)
 	ar rcs $@ $(OBJECTS)
 
 $(EXAMPLE): $(EXAMPLE_OBJECTS) $(ARCHIVE)
-	$(CC) $(EXAMPLE_OBJECTS) -o $@ $(FLAGS) $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE)
+	$(CC) $(EXAMPLE_OBJECTS) -o $@ $(FLAGS) $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE) $(LIB_FLAGS)
 
 mex: $(MEX_FILES)
 
 $(MEX_DIR)/%.mexa64: $(MEX_DIR)/%.c $(ARCHIVE)
-	$(MATLAB_PATH) -nodesktop -nosplash -r "mex $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE) -outdir $(MEX_DIR) $<; exit;"
+	$(MATLAB_PATH) -nodesktop -nosplash -r "mex $(INCLUDE_FLAGS) -L. -l:$(ARCHIVE) $(LIB_FLAGS) -outdir $(MEX_DIR) $<; exit;"
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm $(ARCHIVE)
