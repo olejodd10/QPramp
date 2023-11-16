@@ -5,7 +5,7 @@ INCLUDE_PATHS := include
 INCLUDE_FLAGS := $(addprefix -I, $(INCLUDE_PATHS))
 
 LIB_PATHS := 
-LIBS := -lm
+LIBS := -lm -lpthread
 LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS)
 
 ARCHIVE := libqpramp.a
@@ -22,7 +22,7 @@ MEX_FILES := $(patsubst %, $(MEX_DIR)/%.mexa64, $(MEX_FUNCTIONS))
 MATLAB_PATH := /home/ole/programs/matlab/bin/matlab
 
 CC := gcc
-FLAGS := -Ofast -g -lpthread
+FLAGS := -Ofast -g
 
 .PHONY: all clean lib mex
 all: $(EXAMPLE)
