@@ -12,7 +12,7 @@ ARCHIVE := libqpramp.a
 SOURCES := qp_ramp.c vector.c matrix.c iterable_set.c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
-EXAMPLE := main
+EXAMPLE := qp_ramp_example
 EXAMPLE_SOURCES := main.c lti.c csv.c timing.c matrix.c  
 EXAMPLE_OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(EXAMPLE_SOURCES)) 
 
