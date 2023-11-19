@@ -57,7 +57,7 @@ static size_t most_positive_index(size_t c, const iterable_set_t* a_set, double 
     return index;
 }
 
-static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a_set, size_t index, const double neg_g_invh_gt[c][c], double v[c]) {
+static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
     // Compute matrix vector product
     // Sparse part
     for (size_t i = 0; i < c; ++i) {
@@ -71,6 +71,14 @@ static void compute_v(size_t c, const double invq[c][c], const iterable_set_t* a
             add_scaled_vector(c, v, invq[i], neg_g_invh_gt[index][i], v);
         }
     }
+    // At this point v is defined as in the paper
+    double qdiv = q0+v[index];
+    if (infeasiblity_warning_enabled && 
+        (fabs(qdiv) < infeasibility_warning_min || 
+         fabs(qdiv) > infeasibility_warning_max)) {
+        printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
+    }
+    scale_vector(c, v, -1.0/qdiv, v);
 }
 
 // Returns c if none found
@@ -92,16 +100,8 @@ static size_t rank_2_update_removal_index(size_t c, size_t i, const double invq[
     return index;
 }
 
-// Note that v is also changed
-static void update_y_and_invq(size_t c, size_t index, double q0, const iterable_set_t* a_set, double v[c], double y[c], double invq[c][c]) {
-    double qdiv = q0+v[index];
-    if (infeasiblity_warning_enabled && 
-        (fabs(qdiv) < infeasibility_warning_min || 
-         fabs(qdiv) > infeasibility_warning_max)) {
-        printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
-    }
+static void update_y_and_invq(size_t c, size_t index, const iterable_set_t* a_set, const double v[c], double y[c], double invq[c][c]) {
     // Update invq
-    scale_vector(c, v, -1.0/qdiv, v);
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) { // Just inserted
             memcpy(invq[i], v, c*sizeof(double));
@@ -120,9 +120,9 @@ static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_
     while (1) {
         size_t index = most_negative_index(c, a_set, y);
         if (index != c) {
-            compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
+            compute_v(c, invq, a_set, index, 1.0, neg_g_invh_gt, v);
             set_remove(a_set, index);
-            update_y_and_invq(c, index, 1.0, a_set, v, y, invq);
+            update_y_and_invq(c, index, a_set, v, y, invq);
         } else {
             index = most_positive_index(c, a_set, y);
             if (index == c) {
@@ -134,15 +134,15 @@ static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_
                 if (index2 == c) {
                     printf("WARNING: Unable to perform rank two update.\n");
                 } else {
-                    compute_v(c, invq, a_set, index2, neg_g_invh_gt, v);
+                    compute_v(c, invq, a_set, index2, 1.0, neg_g_invh_gt, v);
                     set_remove(a_set, index2);
-                    update_y_and_invq(c, index2, 1.0, a_set, v, y, invq);
+                    update_y_and_invq(c, index2, a_set, v, y, invq);
                 }
             }
 
-            compute_v(c, invq, a_set, index, neg_g_invh_gt, v);
+            compute_v(c, invq, a_set, index, -1.0, neg_g_invh_gt, v);
             set_insert(a_set, index);
-            update_y_and_invq(c, index, -1.0, a_set, v, y, invq);
+            update_y_and_invq(c, index, a_set, v, y, invq);
         }
     }
 }
