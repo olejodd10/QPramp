@@ -100,8 +100,7 @@ static size_t rank_2_update_removal_index(size_t c, size_t i, const double invq[
     return index;
 }
 
-static void update_y_and_invq(size_t c, size_t index, const iterable_set_t* a_set, const double v[c], double y[c], double invq[c][c]) {
-    // Update invq
+static void update_invq(size_t c, size_t index, const iterable_set_t* a_set, const double v[c], double invq[c][c]) {
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) { // Just inserted
             memcpy(invq[i], v, c*sizeof(double));
@@ -110,7 +109,9 @@ static void update_y_and_invq(size_t c, size_t index, const iterable_set_t* a_se
             add_scaled_vector(c, invq[i], v, invq[i][index], invq[i]);
         }
     }
-    // Update y
+}
+
+static void update_y(size_t c, size_t index, const double v[c], double y[c]) {
     add_scaled_vector(c, y, v, y[index], y);
 }
 
@@ -122,7 +123,8 @@ static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_
         if (index != c) {
             compute_v(c, invq, a_set, index, 1.0, neg_g_invh_gt, v);
             set_remove(a_set, index);
-            update_y_and_invq(c, index, a_set, v, y, invq);
+            update_y(c, index, v, y);
+            update_invq(c, index, a_set, v, invq);
         } else {
             index = most_positive_index(c, a_set, y);
             if (index == c) {
@@ -136,13 +138,15 @@ static void algorithm1(size_t c, size_t p, double invq[c][c], iterable_set_t* a_
                 } else {
                     compute_v(c, invq, a_set, index2, 1.0, neg_g_invh_gt, v);
                     set_remove(a_set, index2);
-                    update_y_and_invq(c, index2, a_set, v, y, invq);
+                    update_y(c, index2, v, y);
+                    update_invq(c, index2, a_set, v, invq);
                 }
             }
 
             compute_v(c, invq, a_set, index, -1.0, neg_g_invh_gt, v);
             set_insert(a_set, index);
-            update_y_and_invq(c, index, a_set, v, y, invq);
+            update_y(c, index, v, y);
+            update_invq(c, index, a_set, v, invq);
         }
     }
 }
