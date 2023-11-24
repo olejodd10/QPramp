@@ -4,9 +4,6 @@ void indexed_vectors_clear(indexed_vectors_t *vecs) {
     for (size_t i = 0; i < vecs->capacity; ++i) {
         vecs->whats_here[i] = vecs->max_index; 
     }
-    for (size_t i = 0; i < vecs->max_index; ++i) {
-        vecs->where_is[i] = vecs->capacity;
-    }
     vecs->size = 0;
 }
 
