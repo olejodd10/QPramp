@@ -47,7 +47,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double *z = mxGetPr(plhs[0]);
 
     qp_ramp_init(c);
-    qp_ramp_solve(c, n, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_g_invh, x, z);
+    qp_ramp_solve(c, n, p, neg_g_invh_gt, neg_s, neg_w, neg_g_invh, x, z);
     qp_ramp_cleanup();
 }
  

@@ -20,8 +20,8 @@ void qp_ramp_cleanup(void);
 // Note that checking this slows down the algorithm, so consider checking output instead
 void qp_ramp_enable_infeasibility_warning(double min, double max);
 
-void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]);
+void qp_ramp_solve(size_t c, size_t n, size_t p, const double *neg_g_invh_gt, const double *neg_s, const double *neg_w, const double *neg_g_invh, const double *x, double *z);
 
-void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]);
+void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double *neg_g_invh_gt, const double *neg_s, const double *neg_w, const double *neg_invh_f, const double *neg_g_invh, const double *x, double *u);
 
 #endif

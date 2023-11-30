@@ -60,22 +60,22 @@ int main(int argc, char *argv[]) {
 
     timing_reset();
     sprintf(input_path, "%s/a.csv", input_dir);
-    if (csv_parse_matrix(input_path, n_dim, n_dim, (double(*)[])a)) { 
+    if (csv_parse_matrix(input_path, n_dim, n_dim, a)) { 
         printf("Error while parsing input matrix a.\n"); 
         return 1;
     }
     sprintf(input_path, "%s/b.csv", input_dir);
-    if (csv_parse_matrix(input_path, n_dim, m_dim, (double(*)[])b)) { 
+    if (csv_parse_matrix(input_path, n_dim, m_dim, b)) { 
         printf("Error while parsing input matrix b.\n"); 
         return 1;
     }
     sprintf(input_path, "%s/x0.csv", input_dir);
-    if (csv_parse_matrix(input_path, initial_conditions, n_dim, (double(*)[])x0)) { 
+    if (csv_parse_matrix(input_path, initial_conditions, n_dim, x0)) { 
         printf("Error while parsing input matrix x0.\n"); 
         return 1;
     }
     sprintf(input_path, "%s/invh.csv", input_dir);
-    if (csv_parse_matrix(input_path, p_dim, p_dim, (double(*)[])invh)) { 
+    if (csv_parse_matrix(input_path, p_dim, p_dim, invh)) { 
         printf("Error while parsing input matrix invh.\n"); 
         return 1; 
     }
@@ -85,17 +85,17 @@ int main(int argc, char *argv[]) {
         return 1; 
     }
     sprintf(input_path, "%s/g.csv", input_dir);
-    if (csv_parse_matrix(input_path, c_dim, p_dim, (double(*)[])g)) { 
+    if (csv_parse_matrix(input_path, c_dim, p_dim, g)) { 
         printf("Error while parsing input matrix g.\n"); 
         return 1; 
     }
     sprintf(input_path, "%s/s.csv", input_dir);
-    if (csv_parse_matrix(input_path, c_dim, n_dim, (double(*)[])s)) { 
+    if (csv_parse_matrix(input_path, c_dim, n_dim, s)) { 
         printf("Error while parsing input matrix s.\n"); 
         return 1; 
     }
     sprintf(input_path, "%s/f.csv", input_dir);
-    if (csv_parse_matrix(input_path, p_dim, n_dim, (double(*)[])f)) { 
+    if (csv_parse_matrix(input_path, p_dim, n_dim, f)) { 
         printf("Error while parsing input matrix f.\n"); 
         return 1; 
     }
@@ -104,13 +104,13 @@ int main(int argc, char *argv[]) {
     // Other initialization
     timing_reset();
     negate_vector(c_dim, w, neg_w);
-    negate_matrix(c_dim, n_dim, (double(*)[])s, (double(*)[])neg_s);
-    transpose(p_dim, n_dim, (double(*)[])f, (double(*)[])ft);
-    negate_matrix(p_dim, p_dim, (double(*)[])invh, (double(*)[])neg_invh);
-    matrix_product(m_dim, p_dim, n_dim, (double(*)[])neg_invh, (double(*)[])ft, (double(*)[])neg_invh_f);
-    matrix_product(c_dim, p_dim, p_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Exploiting the fact that invh is symmetric
-    matrix_product(c_dim, p_dim, c_dim, (double(*)[])g, (double(*)[])neg_g_invh, (double(*)[])neg_g_invh_gt);
-    matrix_product(c_dim, p_dim, m_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Make sure memory layout is correct for later use
+    negate_matrix(c_dim, n_dim, s, neg_s);
+    transpose(p_dim, n_dim, f, ft);
+    negate_matrix(p_dim, p_dim, invh, neg_invh);
+    matrix_product(m_dim, p_dim, n_dim, neg_invh, ft, neg_invh_f);
+    matrix_product(c_dim, p_dim, p_dim, g, neg_invh, neg_g_invh); // Exploiting the fact that invh is symmetric
+    matrix_product(c_dim, p_dim, c_dim, g, neg_g_invh, neg_g_invh_gt);
+    matrix_product(c_dim, p_dim, m_dim, g, neg_invh, neg_g_invh); // Make sure memory layout is correct for later use
     // Free memory that's no longer needed
     free(invh);
 	free(w);
@@ -131,8 +131,8 @@ int main(int argc, char *argv[]) {
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < simulation_timesteps; ++j) {
             timing_reset();
-            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, &x[j*n_dim], &u[j*m_dim]);
-            simulate(n_dim, m_dim, (double(*)[])a, &x[j*n_dim], (double(*)[])b, &u[j*m_dim], &x[(j+1)*n_dim]); 
+            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, neg_g_invh_gt, neg_s, neg_w, neg_invh_f, neg_g_invh, &x[j*n_dim], &u[j*m_dim]);
+            simulate(n_dim, m_dim, a, &x[j*n_dim], b, &u[j*m_dim], &x[(j+1)*n_dim]); 
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
         }
@@ -145,11 +145,11 @@ int main(int argc, char *argv[]) {
         char save_path[80];
         // Save test case results
         sprintf(save_path, "%s/xout%d.csv", output_dir, i);
-        if (csv_save_matrix(save_path, simulation_timesteps+1, n_dim, (double(*)[])x) < 0) {
+        if (csv_save_matrix(save_path, simulation_timesteps+1, n_dim, x) < 0) {
             printf("Error while saving x.\n");
         }
         sprintf(save_path, "%s/uout%d.csv", output_dir, i);
-        if (csv_save_matrix(save_path, simulation_timesteps, m_dim, (double(*)[])u) < 0) {
+        if (csv_save_matrix(save_path, simulation_timesteps, m_dim, u) < 0) {
             printf("Error while saving u.\n");
         }
         sprintf(save_path, "%s/tout%d.csv", output_dir, i);

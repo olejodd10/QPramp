@@ -39,7 +39,7 @@ static int assert_size(FILE* f, size_t m, size_t n) {
 }
 
 // Accepts both row and column vectors
-static int parse_row(FILE* f, size_t n, double res[n]) {
+static int parse_row(FILE* f, size_t n, double *res) {
     for (size_t i = 0; i < n; ++i) {
         int ret = fscanf(f, "%lf,", &res[i]);
         if (ret != 1) {
@@ -70,7 +70,7 @@ ssize_t csv_parse_matrix_width(const char* path) {
 }
 
 
-int csv_parse_vector(const char* path, size_t n, double res[n]) {
+int csv_parse_vector(const char* path, size_t n, double *res) {
     FILE* f = fopen(path, "r");
     if (f == NULL) {
         return -1;
@@ -84,7 +84,7 @@ int csv_parse_vector(const char* path, size_t n, double res[n]) {
     return ret;
 }
 
-int csv_parse_matrix(const char* path, size_t m, size_t n, double res[m][n]) {
+int csv_parse_matrix(const char* path, size_t m, size_t n, double *res) {
     FILE* f = fopen(path, "r");
     if (f == NULL) {
         return -1;
@@ -94,7 +94,7 @@ int csv_parse_matrix(const char* path, size_t m, size_t n, double res[m][n]) {
         return ret;
     }
     for (size_t i = 0; i < m; ++i) {
-        ret = parse_row(f, n, res[i]);
+        ret = parse_row(f, n, &res[n*i]);
         if (ret < 0) {
             return ret;
         }
@@ -103,7 +103,7 @@ int csv_parse_matrix(const char* path, size_t m, size_t n, double res[m][n]) {
     return ret;
 }
 
-static ssize_t write_row(FILE* f, size_t n, const double vec[n]) {
+static ssize_t write_row(FILE* f, size_t n, const double *vec) {
     size_t sum = 0;
     int ret = 0;
     for (size_t i = 0; i < n-1; ++i) {
@@ -124,7 +124,7 @@ static ssize_t write_row(FILE* f, size_t n, const double vec[n]) {
 }
 
 // Writes as a column vector
-ssize_t csv_save_vector(const char* path, size_t n, const double vec[n]) {
+ssize_t csv_save_vector(const char* path, size_t n, const double *vec) {
     FILE* f = fopen(path, "w+");
     if (f == NULL) {
         return -1;
@@ -147,7 +147,7 @@ ssize_t csv_save_vector(const char* path, size_t n, const double vec[n]) {
     return sum;
 }
 
-ssize_t csv_save_matrix(const char* path, size_t m, size_t n, const double mat[m][n]) {
+ssize_t csv_save_matrix(const char* path, size_t m, size_t n, const double *mat) {
     FILE* f = fopen(path, "w+");
     if (f == NULL) {
         return -1;
@@ -155,7 +155,7 @@ ssize_t csv_save_matrix(const char* path, size_t m, size_t n, const double mat[m
     size_t sum = 0;
     int ret;
     for (size_t i = 0; i < m; ++i) {
-        ret = write_row(f, n, mat[i]);
+        ret = write_row(f, n, &mat[n*i]);
         if (ret < 0) {
             return ret;
         } else {
