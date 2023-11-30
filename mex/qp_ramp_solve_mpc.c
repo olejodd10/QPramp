@@ -54,7 +54,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     plhs[0] = mxCreateDoubleMatrix(1,(mwSize)m,mxREAL);
     double *u = mxGetPr(plhs[0]);
 
-    qp_ramp_init(c);
+    qp_ramp_init(c, p);
     qp_ramp_solve_mpc(c, n, m, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, x, u);
     qp_ramp_cleanup();
 }

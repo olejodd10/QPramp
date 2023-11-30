@@ -10,9 +10,10 @@
 #include "matrix.h"
 #include "vector.h"
 #include "iterable_set.h"
+#include "indexed_vectors.h"
 
 // Allocates memory for solver
-void qp_ramp_init(size_t c);
+void qp_ramp_init(size_t c, size_t p);
 
 // Deallocates memory for solver
 void qp_ramp_cleanup(void);
