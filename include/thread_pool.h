@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <stddef.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 8
 
 // Call once before scheduling tasks
 void thread_pool_init();
