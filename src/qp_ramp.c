@@ -32,7 +32,7 @@ void qp_ramp_enable_infeasibility_warning(double min, double max) {
 }
 
 // Returns c if none found
-static size_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
+static inline size_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
     double min = -QP_RAMP_EPS;
     size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
@@ -45,7 +45,7 @@ static size_t most_negative_index(size_t c, const iterable_set_t* a_set, double 
 }
 
 // Returns c if none found
-static size_t most_positive_index(size_t c, const iterable_set_t* a_set, double y[c]) {
+static inline size_t most_positive_index(size_t c, const iterable_set_t* a_set, double y[c]) {
     double max = QP_RAMP_EPS;
     size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
     for (size_t i = 0; i < c; ++i) {
@@ -57,7 +57,7 @@ static size_t most_positive_index(size_t c, const iterable_set_t* a_set, double 
     return index;
 }
 
-static void compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
+static inline void compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
     // Compute matrix vector product
     // Sparse part
     for (size_t i = 0; i < c; ++i) {
@@ -82,7 +82,7 @@ static void compute_v(size_t c, const indexed_vectors_t *invq, const iterable_se
 }
 
 // Returns c if none found
-static size_t rank_2_update_removal_index(size_t c, size_t i, const indexed_vectors_t *invq, const iterable_set_t* a_set, const double neg_g_invh_gt[c][c], const double y[c]) {
+static inline size_t rank_2_update_removal_index(size_t c, size_t i, const indexed_vectors_t *invq, const iterable_set_t* a_set, const double neg_g_invh_gt[c][c], const double y[c]) {
     double max = 0.0; // Overwritten immediately
     size_t index = c;
     for (size_t j = set_first(a_set); j != set_end(a_set); j = set_next(a_set, j)) {
@@ -100,14 +100,14 @@ static size_t rank_2_update_removal_index(size_t c, size_t i, const indexed_vect
     return index;
 }
 
-static void update_invq(size_t c, size_t index, const iterable_set_t* a_set, const double v[c], indexed_vectors_t *invq) {
+static inline void update_invq(size_t c, size_t index, const iterable_set_t* a_set, const double v[c], indexed_vectors_t *invq) {
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         double* invqi = indexed_vectors_get_mut(invq, i);
         add_scaled_vector(c, invqi, v, invqi[index], invqi);
     }
 }
 
-static void update_y(size_t c, size_t index, const double v[c], double y[c]) {
+static inline void update_y(size_t c, size_t index, const double v[c], double y[c]) {
     add_scaled_vector(c, y, v, y[index], y);
 }
 
