@@ -169,7 +169,7 @@ static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const d
     }
 }
 
-static void solve_y(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double x[n], double y[c]) {
+static inline void initialize_y(size_t c, size_t n, const double neg_s[c][n], const double neg_w[c], const double x[n], double v[c], double y[c]) {
     matrix_vector_product(c, n, neg_s, x, v); // Use v temporarily; it will be overwritten later
     vector_sum(c, v, neg_w, v);
     memcpy(y, v, c*sizeof(double));
@@ -177,6 +177,10 @@ static void solve_y(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][
         add_scaled_vector(c, y, indexed_vectors_get(&invq, i), v[i], y);
         y[i] -= v[i];
     }
+}
+
+static void solve_y(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double x[n], double y[c]) {
+    initialize_y(c, n, neg_s, neg_w, x, v, y);
     algorithm1(c, p, &invq, &a_set, neg_g_invh_gt, v, y);
 }
 
