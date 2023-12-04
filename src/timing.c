@@ -1,4 +1,6 @@
 #include "timing.h"
+
+#include <stdio.h>
 #include <time.h>
 
 #define TIMING_CLOCK CLOCK_REALTIME

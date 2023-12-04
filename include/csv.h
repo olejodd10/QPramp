@@ -1,8 +1,8 @@
 #ifndef CSV_H
 #define CSV_H
 
-#include <stdio.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 ssize_t csv_parse_matrix_height(const char* path); 
 

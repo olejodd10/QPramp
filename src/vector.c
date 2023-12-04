@@ -1,5 +1,8 @@
 #include "vector.h"
 
+#include <stddef.h>
+#include <stdio.h>
+
 void print_vector(size_t n, const double vec[n]) {
     for (size_t i = 0; i < n; ++i) {
         printf("%.2e ", vec[i]);

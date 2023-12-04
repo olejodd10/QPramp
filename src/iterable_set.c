@@ -1,5 +1,10 @@
 #include "iterable_set.h"
 
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 void set_init(iterable_set_t* set, size_t capacity) {
     set->capacity = capacity;
     set->elements = (uint8_t*)malloc(capacity*sizeof(uint8_t));

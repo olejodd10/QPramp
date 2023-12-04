@@ -2,9 +2,6 @@
 #define INDEXED_VECTORS_H
 
 #include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 typedef struct {
     size_t length;

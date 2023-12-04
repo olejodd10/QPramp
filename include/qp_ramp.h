@@ -1,15 +1,7 @@
 #ifndef QP_RAMP_H
 #define QP_RAMP_H
 
-#include <stdint.h>
 #include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include "matrix.h"
-#include "vector.h"
-#include "iterable_set.h"
-#include "indexed_vectors.h"
 
 #define QPRAMP_ERROR_INFEASIBLE -1
 #define QPRAMP_ERROR_RANK_2_UPDATE -2

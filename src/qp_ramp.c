@@ -1,5 +1,16 @@
 #include "qp_ramp.h"
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+#include "matrix.h"
+#include "vector.h"
+#include "iterable_set.h"
+#include "indexed_vectors.h"
+
 #define QP_RAMP_EPS 1e-8
 
 static uint8_t infeasiblity_warning_enabled = 0;

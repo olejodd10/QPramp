@@ -1,5 +1,9 @@
 #include "indexed_vectors.h"
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 void indexed_vectors_clear(indexed_vectors_t *vecs) {
     for (size_t i = 0; i < vecs->capacity; ++i) {
         vecs->whats_here[i] = vecs->max_index; 

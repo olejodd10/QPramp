@@ -1,5 +1,11 @@
 #include "matrix.h"
 
+#include <stdint.h>
+#include <stddef.h>
+#include <math.h>
+
+#include "vector.h"
+
 void print_matrix(size_t m, size_t n, const double mat[m][n]) {
     for (size_t i = 0; i < m; ++i) {
         print_vector(n, mat[i]);

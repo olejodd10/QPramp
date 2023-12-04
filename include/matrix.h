@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <math.h>
-#include "vector.h"
 
 // Do not use any of the functions to do operations on parts of a matrix, as the layout in memory may be unexpected and give errors.
 // It seems that the array double mat[m][n] is laid out as a one-dimensional array in memory. [i][j] expands to [m*i+n] it seems.

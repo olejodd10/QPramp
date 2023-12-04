@@ -1,5 +1,10 @@
 #include "lti.h"
 
+#include <stddef.h>
+
+#include "matrix.h"
+#include "vector.h"
+
 void simulate_affine(size_t n, const double a[n][n], const double x[n], double res[n]) {
     matrix_vector_product(n, n, a, x, res);
 }

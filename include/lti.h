@@ -1,10 +1,7 @@
 #ifndef LTI_H
 #define LTI_H
 
-#include <stdint.h>
 #include <stddef.h>
-#include "matrix.h"
-#include "vector.h"
 
 // res == x IKKE lov
 void simulate_affine(size_t n, const double a[n][n], const double x[n], double res[n]);

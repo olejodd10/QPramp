@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "qp_ramp.h"
-#include "iterable_set.h"
 #include "vector.h"
 #include "matrix.h"
 #include "csv.h"

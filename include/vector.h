@@ -1,7 +1,6 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include <stdio.h>
 #include <stddef.h>
 
 void print_vector(size_t n, const double vec[n]);
