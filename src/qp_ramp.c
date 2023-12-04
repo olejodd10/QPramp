@@ -57,7 +57,7 @@ static inline size_t most_positive_index(size_t c, const iterable_set_t* a_set, 
     return index;
 }
 
-static inline int compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
+static int compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
     // Compute matrix vector product
     // Sparse part
     for (size_t i = 0; i < c; ++i) {
