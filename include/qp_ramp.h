@@ -1,5 +1,5 @@
-#ifndef ALGS_H
-#define ALGS_H
+#ifndef QP_RAMP_H
+#define QP_RAMP_H
 
 #include <stdint.h>
 #include <stddef.h>

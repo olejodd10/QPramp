@@ -1,5 +1,5 @@
-#ifndef MATRIX_COLUMNS_H
-#define MATRIX_COLUMNS_H
+#ifndef INDEXED_VECTORS_H
+#define INDEXED_VECTORS_H
 
 #include <stddef.h>
 #include <stdlib.h>
