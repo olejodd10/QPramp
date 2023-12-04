@@ -3,16 +3,16 @@
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if(nrhs!=5) {
-        mexErrMsgIdAndTxt("MyToolbox:qp_ramp_solve_mpc:nrhs","Five inputs required.");
+        mexErrMsgTxt("Five inputs required.");
     }
     if(nlhs!=1) {
-        mexErrMsgIdAndTxt("MyToolbox:qp_ramp_solve_mpc:nlhs","One output required.");
+        mexErrMsgTxt("One output required.");
     }
 
     for (int i = 0; i < nrhs; ++i) {
         if( !mxIsDouble(prhs[i]) || 
              mxIsComplex(prhs[i])) {
-            mexErrMsgIdAndTxt("MyToolbox:qp_ramp_solve_mpc:notDouble","Input matrix must be type double.");
+            mexErrMsgTxt("Input matrix must be type double.");
         }
     }
 
@@ -47,7 +47,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     double *z = mxGetPr(plhs[0]);
 
     qp_ramp_init(c, p);
-    qp_ramp_solve(c, n, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_g_invh, x, z);
+    // qp_ramp_enable_infeasibility_error(1e-12, 1e12); // Remove comment to enable infeasibility errors
+    int err = qp_ramp_solve(c, n, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_g_invh, x, z);
+    switch (err) {
+        case (QPRAMP_ERROR_INFEASIBLE):
+            mexErrMsgTxt("Problem is infeasible.");
+            break;
+        case (QPRAMP_ERROR_RANK_2_UPDATE):
+            mexErrMsgTxt("Unable to perform rank 2 update.");
+            break;
+        default:
+            break;
+    }
     qp_ramp_cleanup();
 }
  
