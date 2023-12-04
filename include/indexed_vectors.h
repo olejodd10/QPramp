@@ -22,8 +22,6 @@ void indexed_vectors_init(indexed_vectors_t *vecs, size_t capacity, size_t lengt
 
 void indexed_vectors_destroy(indexed_vectors_t *vecs);
 
-static size_t first_free(const indexed_vectors_t *vecs);
-
 double* indexed_vectors_get_mut(indexed_vectors_t *vecs, size_t index);
 
 const double* indexed_vectors_get(const indexed_vectors_t *vecs, size_t index);

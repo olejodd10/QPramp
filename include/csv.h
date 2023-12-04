@@ -15,8 +15,6 @@ int csv_parse_vector(const char* path, size_t n, double res[n]);
 // Returns error if file size is incompatible or if any reads fail
 int csv_parse_matrix(const char* path, size_t m, size_t n, double res[m][n]); 
 
-static ssize_t write_row(FILE* f, size_t n, const double vec[n]); 
-
 // Writes as a column vector
 ssize_t csv_save_vector(const char* path, size_t n, const double vec[n]); 
 

@@ -22,7 +22,7 @@ MEX_FILES := $(patsubst %, $(MEX_DIR)/%.mexa64, $(MEX_FUNCTIONS))
 MATLAB_PATH := /home/ole/programs/matlab/bin/matlab
 
 CC := gcc
-FLAGS := -Ofast -g
+FLAGS := -Ofast -g -Wall
 
 .PHONY: all clean lib mex
 all: $(EXAMPLE)
