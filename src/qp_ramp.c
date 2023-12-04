@@ -25,7 +25,7 @@ void qp_ramp_cleanup(void) {
     indexed_vectors_destroy(&invq);
 }
 
-void qp_ramp_enable_infeasibility_warning(double min, double max) {
+void qp_ramp_enable_infeasibility_error(double min, double max) {
     infeasiblity_warning_enabled = 1;
     infeasibility_warning_min = min;
     infeasibility_warning_max = max;
@@ -57,7 +57,7 @@ static inline size_t most_positive_index(size_t c, const iterable_set_t* a_set, 
     return index;
 }
 
-static inline void compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
+static inline int compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set_t* a_set, size_t index, double q0, const double neg_g_invh_gt[c][c], double v[c]) {
     // Compute matrix vector product
     // Sparse part
     for (size_t i = 0; i < c; ++i) {
@@ -76,9 +76,10 @@ static inline void compute_v(size_t c, const indexed_vectors_t *invq, const iter
     if (infeasiblity_warning_enabled && 
         (fabs(qdiv) < infeasibility_warning_min || 
          fabs(qdiv) > infeasibility_warning_max)) {
-        printf("WARNING: Value %e exceeds infeasibility warning limits.\n", qdiv);
+        return QPRAMP_ERROR_INFEASIBLE;
     }
     scale_vector(c, v, -1.0/qdiv, v);
+    return 0;
 }
 
 // Returns c if none found
@@ -113,11 +114,14 @@ static inline void update_y(size_t c, size_t index, const double v[c], double y[
 
 // Terminal results are written to and available from a_set, invq and y
 // v can be anything - call it temp?
-static void algorithm1(size_t c, size_t p, indexed_vectors_t *invq, iterable_set_t* a_set, const double neg_g_invh_gt[c][c], double v[c], double y[c]) {
+static int algorithm1(size_t c, size_t p, indexed_vectors_t *invq, iterable_set_t* a_set, const double neg_g_invh_gt[c][c], double v[c], double y[c]) {
     while (1) {
         size_t index = most_negative_index(c, a_set, y);
         if (index != c) {
-            compute_v(c, invq, a_set, index, 1.0, neg_g_invh_gt, v);
+            int err = compute_v(c, invq, a_set, index, 1.0, neg_g_invh_gt, v);
+            if (err) {
+                return err;
+            }
             set_remove(a_set, index);
             indexed_vectors_remove(invq, index);
             update_y(c, index, v, y);
@@ -131,9 +135,12 @@ static void algorithm1(size_t c, size_t p, indexed_vectors_t *invq, iterable_set
             if (set_size(a_set) == p) {
                 size_t index2 = rank_2_update_removal_index(c, index, invq, a_set, neg_g_invh_gt, y);
                 if (index2 == c) {
-                    printf("WARNING: Unable to perform rank two update.\n");
+                    return QPRAMP_ERROR_RANK_2_UPDATE;
                 } else {
-                    compute_v(c, invq, a_set, index2, 1.0, neg_g_invh_gt, v);
+                    int err = compute_v(c, invq, a_set, index2, 1.0, neg_g_invh_gt, v);
+                    if (err) {
+                        return err;
+                    }
                     set_remove(a_set, index2);
                     indexed_vectors_remove(invq, index2);
                     update_y(c, index2, v, y);
@@ -141,7 +148,10 @@ static void algorithm1(size_t c, size_t p, indexed_vectors_t *invq, iterable_set
                 }
             }
 
-            compute_v(c, invq, a_set, index, -1.0, neg_g_invh_gt, v);
+            int err = compute_v(c, invq, a_set, index, -1.0, neg_g_invh_gt, v);
+            if (err) {
+                return err;
+            }
             update_y(c, index, v, y);
             update_invq(c, index, a_set, v, invq);
             set_insert(a_set, index);
@@ -149,6 +159,7 @@ static void algorithm1(size_t c, size_t p, indexed_vectors_t *invq, iterable_set
             indexed_vectors_get_mut(invq, index)[index] += 1.0; // Pretend there was a unit vector in the column to start with
         }
     }
+    return 0;
 }
 
 static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
@@ -179,20 +190,28 @@ static inline void initialize_y(size_t c, size_t n, const double neg_s[c][n], co
     }
 }
 
-static void solve_y(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double x[n], double y[c]) {
+static int solve_y(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double x[n], double y[c]) {
     initialize_y(c, n, neg_s, neg_w, x, v, y);
-    algorithm1(c, p, &invq, &a_set, neg_g_invh_gt, v, y);
+    return algorithm1(c, p, &invq, &a_set, neg_g_invh_gt, v, y);
 }
 
-void qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
-    solve_y(c, n, p, neg_g_invh_gt, neg_s, neg_w, x, y);
+int qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
+    int err = solve_y(c, n, p, neg_g_invh_gt, neg_s, neg_w, x, y);
+    if (err) {
+        return err;
+    }
     compute_z(c, p, neg_g_invh, y, z);
+    return 0;
 }
 
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-void qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
-    solve_y(c, n, p, neg_g_invh_gt, neg_s, neg_w, x, y);
+int qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
+    int err = solve_y(c, n, p, neg_g_invh_gt, neg_s, neg_w, x, y);
+    if (err) {
+        return err;
+    }
     compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
+    return 0;
 }
