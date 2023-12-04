@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
     free(ft);
     free(neg_invh);
     qp_ramp_init(c_dim, p_dim);
+    // qp_ramp_enable_infeasibility_error(1e-12, 1e12); // Remove comment to enable infeasibility errors
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
@@ -131,7 +132,10 @@ int main(int argc, char *argv[]) {
         double test_case_time = 0.0;
         for (uint16_t j = 0; j < simulation_timesteps; ++j) {
             timing_reset();
-            qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, &x[j*n_dim], &u[j*m_dim]);
+            int err = qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, &x[j*n_dim], &u[j*m_dim]);
+            if (err) {
+                printf("ERROR: %d\n", err);
+            }
             simulate(n_dim, m_dim, (double(*)[])a, &x[j*n_dim], (double(*)[])b, &u[j*m_dim], &x[(j+1)*n_dim]); 
             t[j] = (double)timing_elapsed();
             test_case_time += t[j];
