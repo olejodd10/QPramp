@@ -104,9 +104,9 @@ int main(int argc, char *argv[]) {
     // Other initialization
     timing_reset();
     negate_vector(c_dim, w, neg_w);
-    negate_matrix(c_dim, n_dim, (double(*)[])s, (double(*)[])neg_s);
-    transpose(p_dim, n_dim, (double(*)[])f, (double(*)[])ft);
-    negate_matrix(p_dim, p_dim, (double(*)[])invh, (double(*)[])neg_invh);
+    matrix_negate(c_dim, n_dim, (double(*)[])s, (double(*)[])neg_s);
+    matrix_transpose(p_dim, n_dim, (double(*)[])f, (double(*)[])ft);
+    matrix_negate(p_dim, p_dim, (double(*)[])invh, (double(*)[])neg_invh);
     matrix_product(m_dim, p_dim, n_dim, (double(*)[])neg_invh, (double(*)[])ft, (double(*)[])neg_invh_f);
     matrix_product(c_dim, p_dim, p_dim, (double(*)[])g, (double(*)[])neg_invh, (double(*)[])neg_g_invh); // Exploiting the fact that invh is symmetric
     matrix_product(c_dim, p_dim, c_dim, (double(*)[])g, (double(*)[])neg_g_invh, (double(*)[])neg_g_invh_gt);
