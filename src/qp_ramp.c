@@ -77,9 +77,9 @@ static int compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set
     // Dense part
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (i == index) {
-            add_scaled_vector(c, v, indexed_vectors_get(invq, i), neg_g_invh_gt[index][i] + 1.0, v);
+            vector_add_scaled(c, v, indexed_vectors_get(invq, i), neg_g_invh_gt[index][i] + 1.0, v);
         } else {
-            add_scaled_vector(c, v, indexed_vectors_get(invq, i), neg_g_invh_gt[index][i], v);
+            vector_add_scaled(c, v, indexed_vectors_get(invq, i), neg_g_invh_gt[index][i], v);
         }
     }
     // At this point v is defined as in the paper
@@ -89,7 +89,7 @@ static int compute_v(size_t c, const indexed_vectors_t *invq, const iterable_set
          fabs(qdiv) > infeasibility_warning_max)) {
         return QPRAMP_ERROR_INFEASIBLE;
     }
-    scale_vector(c, v, -1.0/qdiv, v);
+    vector_scale(c, v, -1.0/qdiv, v);
     return 0;
 }
 
@@ -115,12 +115,12 @@ static inline size_t rank_2_update_removal_index(size_t c, size_t i, const index
 static inline void update_invq(size_t c, size_t index, const iterable_set_t* a_set, const double v[c], indexed_vectors_t *invq) {
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         double* invqi = indexed_vectors_get_mut(invq, i);
-        add_scaled_vector(c, invqi, v, invqi[index], invqi);
+        vector_add_scaled(c, invqi, v, invqi[index], invqi);
     }
 }
 
 static inline void update_y(size_t c, size_t index, const double v[c], double y[c]) {
-    add_scaled_vector(c, y, v, y[index], y);
+    vector_add_scaled(c, y, v, y[index], y);
 }
 
 // Terminal results are written to and available from a_set, invq and y
@@ -177,7 +177,7 @@ static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n
     matrix_vector_product(m, n, neg_invh_f, x, u);
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > QP_RAMP_EPS) {
-            add_scaled_vector(m, u, neg_g_invh[i], y[i], u);
+            vector_add_scaled(m, u, neg_g_invh[i], y[i], u);
         }
     }
 }
@@ -186,17 +186,17 @@ static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const d
     memset(z, 0, sizeof(double)*p);
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > QP_RAMP_EPS) {
-            add_scaled_vector(p, z, neg_g_invh[i], y[i], z);
+            vector_add_scaled(p, z, neg_g_invh[i], y[i], z);
         }
     }
 }
 
 static inline void initialize_y(size_t c, size_t n, const double neg_s[c][n], const double neg_w[c], const double x[n], double v[c], double y[c]) {
     matrix_vector_product(c, n, neg_s, x, v); // Use v temporarily; it will be overwritten later
-    vector_sum(c, v, neg_w, v);
+    vector_add(c, v, neg_w, v);
     memcpy(y, v, c*sizeof(double));
     for (size_t i = set_first(&a_set); i != set_end(&a_set); i = set_next(&a_set, i)) {
-        add_scaled_vector(c, y, indexed_vectors_get(&invq, i), v[i], y);
+        vector_add_scaled(c, y, indexed_vectors_get(&invq, i), v[i], y);
         y[i] -= v[i];
     }
 }

@@ -6,7 +6,7 @@
 
 void matrix_vector_product(size_t m, size_t n, const double mat[m][n], const double vec[n], double res[m]) {
     for (size_t i = 0; i < m; ++i) {
-        res[i] = inner_product(n, mat[i], vec);
+        res[i] = vector_inner_product(n, mat[i], vec);
     }
 }
 
@@ -14,7 +14,7 @@ void matrix_vector_product(size_t m, size_t n, const double mat[m][n], const dou
 void matrix_product(size_t m, size_t n, size_t p, const double m1[m][n], const double m2t[p][n], double res[m][p]) {
     for (size_t i = 0; i < m; ++i) {
         for (size_t j = 0; j < p; ++j) {
-            res[i][j] = inner_product(n, m1[i], m2t[j]);
+            res[i][j] = vector_inner_product(n, m1[i], m2t[j]);
         }
     }
 }
@@ -22,14 +22,14 @@ void matrix_product(size_t m, size_t n, size_t p, const double m1[m][n], const d
 // vec == res er lov
 void matrix_negate(size_t m, size_t n, const double mat[m][n], double res[m][n]) {
     for (size_t i = 0; i < m; ++i) {
-        negate_vector(n, mat[i], res[i]);
+        vector_negate(n, mat[i], res[i]);
     }
 }
 
 // res == m1 og res == m2 er lov
 void matrix_sum(size_t m, size_t n, const double m1[m][n], const double m2[m][n], double res[m][n]) {
     for (size_t i = 0; i < m; ++i) {
-        vector_sum(n, m1[i], m2[i], res[i]);
+        vector_add(n, m1[i], m2[i], res[i]);
     }
 }
 

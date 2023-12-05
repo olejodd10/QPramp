@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 
     // Other initialization
     timing_reset();
-    negate_vector(c_dim, w, neg_w);
+    vector_negate(c_dim, w, neg_w);
     matrix_negate(c_dim, n_dim, (double(*)[])s, (double(*)[])neg_s);
     matrix_transpose(p_dim, n_dim, (double(*)[])f, (double(*)[])ft);
     matrix_negate(p_dim, p_dim, (double(*)[])invh, (double(*)[])neg_invh);
