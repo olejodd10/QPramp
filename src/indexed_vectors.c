@@ -4,16 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-void indexed_vectors_clear(indexed_vectors_t *vecs) {
-    for (size_t i = 0; i < vecs->capacity; ++i) {
-        if (vecs->whats_here[i] != vecs->max_index) {
-            vecs->where_is[vecs->whats_here[i]] = vecs->capacity;
-            vecs->whats_here[i] = vecs->max_index; 
-        }
-    }
-    vecs->size = 0;
-}
-
 void indexed_vectors_init(indexed_vectors_t *vecs, size_t capacity, size_t length, size_t max_index) {
     vecs->capacity = capacity;
     vecs->length = length;
@@ -34,6 +24,16 @@ void indexed_vectors_destroy(indexed_vectors_t *vecs) {
     free(vecs->where_is);
     free(vecs->whats_here);
     free(vecs->values);
+}
+
+void indexed_vectors_clear(indexed_vectors_t *vecs) {
+    for (size_t i = 0; i < vecs->capacity; ++i) {
+        if (vecs->whats_here[i] != vecs->max_index) {
+            vecs->where_is[vecs->whats_here[i]] = vecs->capacity;
+            vecs->whats_here[i] = vecs->max_index; 
+        }
+    }
+    vecs->size = 0;
 }
 
 static size_t first_available_slot(const indexed_vectors_t *vecs) {
