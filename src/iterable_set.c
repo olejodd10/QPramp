@@ -32,6 +32,9 @@ void set_clear(iterable_set_t* set) {
 }
 
 void set_insert(iterable_set_t* set, size_t element) {
+    if (element >= set->capacity || set->elements[element]) {
+        return;
+    }
     set->elements[element] = 1;
     if (set->last == set->capacity) { // First element
         set->first = element;
@@ -46,6 +49,9 @@ void set_insert(iterable_set_t* set, size_t element) {
 }
 
 void set_remove(iterable_set_t* set, size_t element) {
+    if (element >= set->capacity || !set->elements[element]) {
+        return;
+    }
     // Don't need to update prev and next for element because they only need to be correct for elements currently in the set
     set->elements[element] = 0;
     if (set->first == element) {
@@ -70,7 +76,7 @@ size_t set_size(const iterable_set_t* set) {
 }
 
 uint8_t set_contains(const iterable_set_t* set, size_t element) {
-    return set->elements[element];
+    return element < set->capacity && set->elements[element];
 }
 
 size_t set_first(const iterable_set_t* set) {
@@ -79,7 +85,7 @@ size_t set_first(const iterable_set_t* set) {
 
 // Iterates through active elements in order of insertion
 size_t set_next(const iterable_set_t* set, size_t element) {
-    return set->next[element];
+    return element < set->capacity ? set->next[element] : set->capacity;
 }
 
 size_t set_end(const iterable_set_t* set) {
