@@ -3,21 +3,48 @@
 
 #include <stddef.h>
 
-// Do not use any of the functions to do operations on parts of a matrix, as the layout in memory may be unexpected and give errors.
-// It seems that the array double mat[m][n] is laid out as a one-dimensional array in memory. [i][j] expands to [m*i+n] it seems.
-// For example; If calling print_matrix(3,3,mat) for a matrix that is really 10x10, only values from the first row will be printed. 
-// A printing function that only prints a window of a larger matrix may be implemented.
-
+/**
+ * @brief Compute matrix vector product.
+ *
+ * @param[in] m Height of matrix
+ * @param[in] n Width of matrix
+ * @param[in] mat Flattened m by n array representing matrix
+ * @param[in] vec Array with length n representing vector
+ * @param[out] res Array with length m for storing result mat*vec
+ */
 void matrix_vector_product(size_t m, size_t n, const double mat[m][n], const double vec[n], double res[m]);
 
-// Merk dimensjonene til m2!! Column major/transponerte av m2 
+/**
+ * @brief Compute matrix product.
+ *
+ * @param[in] m Height of m1
+ * @param[in] n Width of m1
+ * @param[in] p Width of m2
+ * @param[in] m1 Flattened m by n array representing matrix
+ * @param[in] m2t Flattened p by n array representing the transpose of matrix m2
+ * @param[out] res Flattened m by p array for storing result m1*m2
+ */
 void matrix_product(size_t m, size_t n, size_t p, const double m1[m][n], const double m2t[p][n], double res[m][p]);
 
-// vec == res er lov
+/**
+ * @brief Negate a matrix.
+ *
+ * @param[in] m Height of matrix
+ * @param[in] n Width of matrix
+ * @param[in] mat Flattened m by n array representing matrix
+ * @param[out] res Flattened m by n array for storing result -mat
+ * @note mat and res can be the same arrays
+ */
 void matrix_negate(size_t m, size_t n, const double mat[m][n], double res[m][n]);
 
-// res == mat åpenbart ikke lov
-// Slow!
+/**
+ * @brief Transpose a matrix.
+ *
+ * @param[in] m Height of matrix
+ * @param[in] n Width of matrix
+ * @param[in] mat Flattened m by n array representing matrix
+ * @param[out] res Flattened n by m array for storing result mat^T
+ */
 void matrix_transpose(size_t m, size_t n, const double mat[m][n], double res[n][m]);
 
 #endif
