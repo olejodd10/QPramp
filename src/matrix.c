@@ -26,13 +26,6 @@ void matrix_negate(size_t m, size_t n, const double mat[m][n], double res[m][n])
     }
 }
 
-// res == m1 og res == m2 er lov
-void matrix_sum(size_t m, size_t n, const double m1[m][n], const double m2[m][n], double res[m][n]) {
-    for (size_t i = 0; i < m; ++i) {
-        vector_add(n, m1[i], m2[i], res[i]);
-    }
-}
-
 // res == mat åpenbart ikke lov
 // Slow!
 void matrix_transpose(size_t m, size_t n, const double mat[m][n], double res[n][m]) {

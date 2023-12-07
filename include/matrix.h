@@ -16,9 +16,6 @@ void matrix_product(size_t m, size_t n, size_t p, const double m1[m][n], const d
 // vec == res er lov
 void matrix_negate(size_t m, size_t n, const double mat[m][n], double res[m][n]);
 
-// res == m1 og res == m2 er lov
-void matrix_sum(size_t m, size_t n, const double m1[m][n], const double m2[m][n], double res[m][n]);
-
 // res == mat åpenbart ikke lov
 // Slow!
 void matrix_transpose(size_t m, size_t n, const double mat[m][n], double res[n][m]);
