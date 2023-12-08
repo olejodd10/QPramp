@@ -173,21 +173,17 @@ static int algorithm1(size_t c, size_t p, indexed_vectors_t *invq, iterable_set_
     return 0;
 }
 
-static void compute_u(size_t m, size_t n, size_t c, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
+static void compute_u(size_t m, size_t n, size_t c, const iterable_set_t *a_set, const double neg_invh_f[m][n], const double x[n], const double neg_g_invh[c][m], const double y[c], double u[m]) {
     matrix_vector_product(m, n, neg_invh_f, x, u);
-    for (size_t i = 0; i < c; ++i) {
-        if (y[i] > QP_RAMP_EPS) {
-            vector_add_scaled(m, u, neg_g_invh[i], y[i], u);
-        }
+    for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
+        vector_add_scaled(m, u, neg_g_invh[i], y[i], u);
     }
 }
 
-static void compute_z(size_t c, size_t p, const double neg_g_invh[c][p], const double y[c], double z[p]) {
+static void compute_z(size_t c, size_t p, const iterable_set_t *a_set, const double neg_g_invh[c][p], const double y[c], double z[p]) {
     memset(z, 0, sizeof(double)*p);
-    for (size_t i = 0; i < c; ++i) {
-        if (y[i] > QP_RAMP_EPS) {
-            vector_add_scaled(p, z, neg_g_invh[i], y[i], z);
-        }
+    for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
+        vector_add_scaled(p, z, neg_g_invh[i], y[i], z);
     }
 }
 
@@ -211,7 +207,7 @@ int qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c]
     if (err) {
         return err;
     }
-    compute_z(c, p, neg_g_invh, y, z);
+    compute_z(c, p, &a_set, neg_g_invh, y, z);
     return 0;
 }
 
@@ -223,6 +219,6 @@ int qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g
     if (err) {
         return err;
     }
-    compute_u(m, n, c, neg_invh_f, x, neg_g_invh, y, u);
+    compute_u(m, n, c, &a_set, neg_invh_f, x, neg_g_invh, y, u);
     return 0;
 }
