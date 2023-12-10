@@ -39,20 +39,20 @@ void indexed_vectors_destroy(indexed_vectors_t *vecs);
 void indexed_vectors_clear(indexed_vectors_t *vecs);
 
 /**
- * @brief Returns a non const pointer to a stored vector.
+ * @brief Returns a pointer to a non const stored vector.
  *
  * @param[in] vecs Indexed vectors instance
  * @param[in] index Index of wanted vector
- * @return Non const pointer to vector if index is stored, NULL otherwise
+ * @return Pointer to non const vector if index is stored, NULL otherwise
  */
 double* indexed_vectors_get_mut(indexed_vectors_t *vecs, size_t index);
 
 /**
- * @brief Returns a const pointer to a stored vector.
+ * @brief Returns a pointer to a const stored vector.
  *
  * @param[in] vecs Indexed vectors instance
  * @param[in] index Index of wanted vector
- * @return Const pointer to vector if index is stored, NULL otherwise
+ * @return Pointer to const vector if index is stored, NULL otherwise
  */
 const double* indexed_vectors_get(const indexed_vectors_t *vecs, size_t index);
 
