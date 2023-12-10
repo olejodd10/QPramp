@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "qp_ramp.h"
+#include "qpramp.h"
 #include "vector.h"
 #include "matrix.h"
 #include "csv.h"
@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
     free(f);
     free(ft);
     free(neg_invh);
-    qp_ramp_init(c_dim, p_dim);
-    // qp_ramp_enable_infeasibility_error(1e-12, 1e12); // Remove comment to enable infeasibility errors
+    qpramp_init(c_dim, p_dim);
+    // qpramp_enable_infeasibility_error(1e-12, 1e12); // Remove comment to enable infeasibility errors
     printf("Initialization time: %ld us\n", timing_elapsed()/1000);
 
     // Simulation
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
         double test_case_time = 0.0;
         for (size_t j = 0; j < simulation_timesteps; ++j) {
             timing_reset();
-            int err = qp_ramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, CONST_VLA_CAST(neg_g_invh_gt), CONST_VLA_CAST(neg_s), neg_w, CONST_VLA_CAST(neg_invh_f), CONST_VLA_CAST(neg_g_invh), &x[j*n_dim], &u[j*m_dim]);
+            int err = qpramp_solve_mpc(c_dim, n_dim, m_dim, p_dim, CONST_VLA_CAST(neg_g_invh_gt), CONST_VLA_CAST(neg_s), neg_w, CONST_VLA_CAST(neg_invh_f), CONST_VLA_CAST(neg_g_invh), &x[j*n_dim], &u[j*m_dim]);
             if (err) {
                 printf("ERROR: %d\n", err);
             }
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     free(x);
     free(u);
 	free(t);
-    qp_ramp_cleanup();
+    qpramp_cleanup();
 
     return 0;
 }

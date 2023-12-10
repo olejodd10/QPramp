@@ -9,10 +9,10 @@ LIBS := -lm
 LIB_FLAGS := $(addprefix -L, $(LIB_PATHS)) $(LIBS)
 
 ARCHIVE := libqpramp.a
-SOURCES := qp_ramp.c vector.c matrix.c iterable_set.c indexed_vectors.c
+SOURCES := qpramp.c vector.c matrix.c iterable_set.c indexed_vectors.c
 OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(SOURCES)) 
 
-EXAMPLE := qp_ramp_example
+EXAMPLE := qpramp_example
 EXAMPLE_SOURCES := main.c lti.c csv.c timing.c matrix.c  
 EXAMPLE_OBJECTS := $(patsubst %.c, $(BUILD_DIR)/%.o, $(EXAMPLE_SOURCES)) 
 

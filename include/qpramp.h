@@ -1,5 +1,5 @@
-#ifndef QP_RAMP_H
-#define QP_RAMP_H
+#ifndef QPRAMP_H
+#define QPRAMP_H
 
 #include <stddef.h>
 
@@ -12,12 +12,12 @@
  * @param[in] c The number of constraints
  * @param[in] p The number of optimization variables
  */
-void qp_ramp_init(size_t c, size_t p);
+void qpramp_init(size_t c, size_t p);
 
 /**
  * @brief Deallocate internal memory used by the solver.
  */
-void qp_ramp_cleanup(void);
+void qpramp_cleanup(void);
 
 /**
  * @brief Enable checks for infeasibility that use specified limits.
@@ -30,7 +30,7 @@ void qp_ramp_cleanup(void);
  * @param[in] min Minimum absolute value of divisor
  * @param[in] max Maximum absolute value of divisor
  */
-void qp_ramp_enable_infeasibility_error(double min, double max);
+void qpramp_enable_infeasibility_error(double min, double max);
 
 /**
  * @brief Solve QP.
@@ -48,7 +48,7 @@ void qp_ramp_enable_infeasibility_error(double min, double max);
  *         QPRAMP_ERROR_INFEASIBLE if infeasibility errors are enabled and detected,
  *         QPRAMP_ERROR_RANK_2_UPDATE if a rank 2 update fails
  */
-int qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]);
+int qpramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]);
 
 /**
  * @brief Solve QP for MPC.
@@ -68,6 +68,6 @@ int qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c]
  *         QPRAMP_ERROR_INFEASIBLE if infeasibility errors are enabled and detected,
  *         QPRAMP_ERROR_RANK_2_UPDATE if a rank 2 update fails
  */
-int qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]);
+int qpramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]);
 
 #endif

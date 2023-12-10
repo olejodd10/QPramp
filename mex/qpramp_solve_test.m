@@ -28,7 +28,7 @@ x = x0(1,:)';
 
 tic;
 for i = 1:timesteps
-    z = qp_ramp_solve(neg_g_invh_gt_t, neg_s_t, neg_w_t, neg_g_invh_t, x');
+    z = qpramp_solve(neg_g_invh_gt_t, neg_s_t, neg_w_t, neg_g_invh_t, x');
     u = z(1:m)' + neg_invh_f(1:m,:)*x;
     x = a*x + b*u;
 end

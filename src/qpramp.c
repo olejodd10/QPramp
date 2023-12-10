@@ -1,4 +1,4 @@
-#include "qp_ramp.h"
+#include "qpramp.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -11,7 +11,7 @@
 #include "iterable_set.h"
 #include "indexed_vectors.h"
 
-#define QP_RAMP_EPS 1e-8
+#define QPRAMP_EPS 1e-8
 
 static uint8_t infeasiblity_warning_enabled = 0;
 static double infeasibility_warning_min;
@@ -22,21 +22,21 @@ static double *v = NULL;
 static iterable_set_t a_set;
 static indexed_vectors_t invq;
 
-void qp_ramp_init(size_t c, size_t p) {
+void qpramp_init(size_t c, size_t p) {
 	y = (double*)malloc(c*sizeof(double));
 	v = (double*)malloc(c*sizeof(double));
     set_init(&a_set, c);
     indexed_vectors_init(&invq, p, c, c);
 }
 
-void qp_ramp_cleanup(void) {
+void qpramp_cleanup(void) {
 	free(y);
 	free(v);
     set_destroy(&a_set);
     indexed_vectors_destroy(&invq);
 }
 
-void qp_ramp_enable_infeasibility_error(double min, double max) {
+void qpramp_enable_infeasibility_error(double min, double max) {
     infeasiblity_warning_enabled = 1;
     infeasibility_warning_min = min;
     infeasibility_warning_max = max;
@@ -44,7 +44,7 @@ void qp_ramp_enable_infeasibility_error(double min, double max) {
 
 // Returns c if none found
 static inline size_t most_negative_index(size_t c, const iterable_set_t* a_set, double y[c]) {
-    double min = -QP_RAMP_EPS;
+    double min = -QPRAMP_EPS;
     size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
     for (size_t i = set_first(a_set); i != set_end(a_set); i = set_next(a_set, i)) {
         if (y[i] < min) {
@@ -57,7 +57,7 @@ static inline size_t most_negative_index(size_t c, const iterable_set_t* a_set, 
 
 // Returns c if none found
 static inline size_t most_positive_index(size_t c, const iterable_set_t* a_set, double y[c]) {
-    double max = QP_RAMP_EPS;
+    double max = QPRAMP_EPS;
     size_t index = c; // Invalid index, think of it as -1 but using an unsigned data type for efficiency
     for (size_t i = 0; i < c; ++i) {
         if (y[i] > max && !set_contains(a_set, i)) {
@@ -104,7 +104,7 @@ static inline size_t rank_2_update_removal_index(size_t c, size_t i, const index
             // Also note that the order of indices for neg_g_invh_gt doesn't matter since it's symmetric
             divisor += indexed_vectors_get(invq, k)[j] * neg_g_invh_gt[i][k];
         }
-        if ((divisor < -QP_RAMP_EPS) && (y[j]/divisor > max || index == c)) {
+        if ((divisor < -QPRAMP_EPS) && (y[j]/divisor > max || index == c)) {
             max = y[j]/divisor;
             index = j;
         }
@@ -202,7 +202,7 @@ static int solve_y(size_t c, size_t n, size_t p, indexed_vectors_t *invq, iterab
     return algorithm1(c, p, invq, a_set, neg_g_invh_gt, v, y);
 }
 
-int qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
+int qpramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_g_invh[c][p], const double x[n], double z[p]) {
     int err = solve_y(c, n, p, &invq, &a_set, neg_g_invh_gt, neg_s, neg_w, x, v, y);
     if (err) {
         return err;
@@ -214,7 +214,7 @@ int qp_ramp_solve(size_t c, size_t n, size_t p, const double neg_g_invh_gt[c][c]
 // This only represents one iteration of algorithm2, i.e. algorithm2 without the lines with "while"
 // Typically you will have an MPC loop where a measured/estimated x is given as an input and then u is computed and applied
 // Note that y is modified
-int qp_ramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
+int qpramp_solve_mpc(size_t c, size_t n, size_t m, size_t p, const double neg_g_invh_gt[c][c], const double neg_s[c][n], const double neg_w[c], const double neg_invh_f[m][n], const double neg_g_invh[c][m], const double x[n], double u[m]) {
     int err = solve_y(c, n, p, &invq, &a_set, neg_g_invh_gt, neg_s, neg_w, x, v, y);
     if (err) {
         return err;
