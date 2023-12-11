@@ -1,14 +1,15 @@
+input_folder = "../data/model3";
+initial_condition = 0;
 timesteps = 100;
 
-folder = "../../examples/example3";
-a = csvread(folder + "/a.csv");
-b = csvread(folder + "/b.csv");
-x0 = csvread(folder + "/x0.csv");
-invh = csvread(folder + "/invh.csv");
-w = csvread(folder + "/w.csv");
-g = csvread(folder + "/g.csv");
-s = csvread(folder + "/s.csv");
-f = csvread(folder + "/f.csv");
+a = csvread(input_folder + "/a.csv");
+b = csvread(input_folder + "/b.csv");
+x0 = csvread(input_folder + "/x0.csv");
+invh = csvread(input_folder + "/invh.csv");
+w = csvread(input_folder + "/w.csv");
+g = csvread(input_folder + "/g.csv");
+s = csvread(input_folder + "/s.csv");
+f = csvread(input_folder + "/f.csv");
 
 neg_g_invh_gt = -g*invh*g';
 neg_s = -s;
@@ -24,7 +25,7 @@ neg_s_t = neg_s';
 neg_w_t = neg_w';
 neg_g_invh_t = neg_g_invh';
 
-x = x0(1,:)';
+x = x0(initial_condition+1,:)';
 
 tic;
 for i = 1:timesteps
@@ -32,5 +33,6 @@ for i = 1:timesteps
     u = z(1:m)' + neg_invh_f(1:m,:)*x;
     x = a*x + b*u;
 end
-toc;
+t = toc;
+fprintf("Total time for initial condition %d running %d timesteps: %.0f us\n", initial_condition, timesteps, t*1e6);
 disp(x');
