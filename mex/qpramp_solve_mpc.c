@@ -1,6 +1,12 @@
 #include "mex.h"
 #include "qpramp.h"
 
+static int initialized = 0;
+
+static void cleanup(void) {
+    qpramp_cleanup();
+}
+
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     if(nrhs!=7) {
         mexErrMsgTxt("Seven inputs required.");
@@ -54,8 +60,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     plhs[0] = mxCreateDoubleMatrix(1,(mwSize)m,mxREAL);
     double *u = mxGetPr(plhs[0]);
 
-    qpramp_init(c, p);
-    // qpramp_enable_infeasibility_error(1e-12, 1e12); // Remove comment to enable infeasibility errors
+    if (!initialized) {
+        qpramp_init(c, p);
+        // qpramp_enable_infeasibility_error(1e-12, 1e12); // Remove comment to enable infeasibility errors
+        initialized = 1;
+    }
     int err = qpramp_solve_mpc(c, n, m, p, (double(*)[])neg_g_invh_gt, (double(*)[])neg_s, neg_w, (double(*)[])neg_invh_f, (double(*)[])neg_g_invh, x, u);
     switch (err) {
         case (QPRAMP_ERROR_INFEASIBLE):
@@ -67,6 +76,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         default:
             break;
     }
-    qpramp_cleanup();
+    mexAtExit(cleanup);
 }
  

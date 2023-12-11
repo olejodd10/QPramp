@@ -37,3 +37,4 @@ end
 t = toc;
 fprintf("Total time for initial condition %d running %d timesteps: %.0f us\n", initial_condition, timesteps, t*1e6);
 disp(x');
+clear mex; % Free memory used by solver
