@@ -23,7 +23,7 @@ void qpramp_cleanup(void);
  * @brief Enable checks for infeasibility that use specified limits.
  *
  * Checks are done by examining the value of the divisor q_0+v_i, 
- * with q_0 and v_i as defined in Hovd and Valmorbida (2023).
+ * with q_0 and v_i defined as in Valmorbida and Hovd (2023).
  * Enabling the error makes the solver return QPRAMP_ERROR_INFEASIBLE 
  * if the limits are breached.
  *
