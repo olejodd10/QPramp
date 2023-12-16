@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 /**
- * @brief Compute matrix vector product.
+ * @brief Compute matrix-vector product.
  *
  * @param[in] m Height of matrix
  * @param[in] n Width of matrix
